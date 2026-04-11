@@ -25,7 +25,7 @@ const Home = () => {
         localStorage.setItem(CACHE_KEY, JSON.stringify(localData));
         localStorage.setItem(CACHE_TIME_KEY, now.toString());
         setLoading(false);
-      }, 500); // Simulated delay [cite: 47]
+      }, 500); 
     }
   }, []);
 
@@ -42,7 +42,6 @@ const Home = () => {
 
   return (
     <div className="container mx-auto p-6">
-      {/* Search & Filter Bar [cite: 14, 15, 16] */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <input 
           type="text" 
@@ -61,7 +60,6 @@ const Home = () => {
         </select>
       </div>
 
-      {/* Grid [cite: 11, 12] */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {filtered.map(p => (
           <div key={p.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow border border-gray-100">
