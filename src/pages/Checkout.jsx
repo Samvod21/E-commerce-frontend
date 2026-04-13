@@ -38,3 +38,5 @@ const Checkout = () => {
     </form>
   );
 };
+
+export default Checkout;
