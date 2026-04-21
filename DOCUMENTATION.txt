@@ -1,0 +1,135 @@
+E-COMMERCE FRONTEND APPLICATION
+================================
+
+Developer Name: Samuel Teshome
+Student ID: WK9893
+
+HOW TO RUN THE PROJECT
+-----------------------
+1. Ensure you have Node.js installed
+2. Navigate to the project directory
+3. Install dependencies:
+   npm install
+4. Start the development server:
+   npm run dev
+5. Open your browser and navigate to the local development URL provided
+
+CACHING IMPLEMENTATION
+----------------------
+
+1. PRODUCT DATA CACHE
+   - Location: src/app/utils/cache.jsx
+   - Implementation:
+     * On first load, products are fetched with a simulated 500ms network delay
+     * Products are cached in localStorage with a timestamp
+     * Cache validity: 5 minutes (300,000 milliseconds)
+     * On subsequent visits within 5 minutes, products load instantly from cache
+     * After 5 minutes, the cache is invalidated and products are re-fetched with delay
+   - Functions:
+     * getProductsFromCache() - Retrieves products from cache if valid
+     * setProductsToCache() - Stores products with current timestamp
+
+2. SEARCH HISTORY CACHE
+   - Location: src/app/utils/cache.jsx
+   - Implementation:
+     * Stores the last 3 unique search queries in localStorage
+     * Duplicates are removed automatically
+     * Search suggestions appear when user focuses on search input
+     * Most recent searches appear first
+   - Functions:
+     * getSearchHistory() - Retrieves search history array
+     * addToSearchHistory() - Adds new search query and maintains 3-item limit
+
+3. FILTER SELECTION CACHE
+   - Location: src/app/utils/cache.jsx
+   - Implementation:
+     * Uses sessionStorage to persist category filter selection
+     * Filter selection persists during the current browser session
+     * Resets when browser/tab is closed
+   - Functions:
+     * saveFilterSelection() - Saves selected category
+     * getFilterSelection() - Retrieves last selected category
+
+CORE FEATURES
+-------------
+
+1. PRODUCT CATALOG
+   - 8 products with unique IDs
+   - Grid display with responsive layout
+   - Product cards show: image, name, price, category, stock status
+   - Located in: src/app/data/products.jsx
+
+2. FILTERING & SEARCH
+   - Real-time search by product name
+   - Category filter dropdown (All, Electronics, Sports, Home)
+   - Instant filter updates as user types or selects
+   - Search suggestions based on history
+
+3. SHOPPING CART
+   - Add products to cart
+   - Remove products from cart
+   - Update item quantities (increase/decrease)
+   - Display total price
+   - Cart persists after page refresh using localStorage
+   - Cart state managed via React Context API
+   - Located in: src/app/context/CartContext.jsx
+
+4. PRODUCT DETAILS PAGE
+   - Individual page for each product
+   - Shows full description, price, stock status
+   - Add to cart functionality
+   - Route: /product/:id
+
+5. CHECKOUT SIMULATION
+   - Form collecting: name, email, address
+   - Client-side validation (all fields required)
+   - Email format validation
+   - Order summary with cart items and total
+   - On submission: saves order to localStorage and clears cart
+   - Order confirmation message displayed
+   - Auto-redirect to order history after 3 seconds
+
+6. ORDER HISTORY
+   - Displays all past orders from localStorage
+   - Each order shows: date, order ID, items, total amount
+   - Chronological order (newest first)
+   - Customer shipping information displayed
+
+7. NAVIGATION
+   - React Router implementation
+   - Routes:
+     * / - Home page with product catalog
+     * /product/:id - Product details
+     * /cart - Shopping cart
+     * /checkout - Checkout form
+     * /orders - Order history
+   - Persistent navigation bar with cart count badge
+
+ASSUMPTIONS MADE
+----------------
+
+1. No backend server required - all data stored in localStorage and sessionStorage
+2. Product images use Unsplash placeholder images for demonstration
+3. Shipping is free for all orders
+4. No payment processing - checkout is simulated
+5. Stock levels don't decrease when orders are placed (simulation only)
+6. No user authentication required
+7. Browser localStorage and sessionStorage are available and enabled
+
+TECHNOLOGIES USED
+-----------------
+- React 18.3.1
+- React Router 7.13.0
+- Context API (for state management)
+- localStorage (for data persistence)
+- sessionStorage (for session-based caching)
+- Tailwind CSS 4.1.12 (for styling)
+- Lucide React (for icons)
+- Vite 6.3.5 (build tool)
+
+NOTES
+-----
+- All components use functional components with React Hooks
+- LocalStorage keys used: 'cart', 'orders', 'productCache', 'searchHistory'
+- SessionStorage keys used: 'lastFilterCategory'
+- Responsive design works on mobile, tablet, and desktop screens
