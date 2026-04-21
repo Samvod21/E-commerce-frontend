@@ -1,14 +1,13 @@
 import React, { useContext, useState } from 'react';
 import { CartContext } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
-import '../styles/app.css'; // Import your custom CSS
+import '../styles/app.css';
 
 const Home = () => {
   const { products, loading, searchCache, updateSearchCache } = useContext(CartContext);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
 
-  // Instant filtering logic [cite: 17]
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) && 
     (category === 'All' || p.category === category)

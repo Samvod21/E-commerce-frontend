@@ -4,7 +4,7 @@ import ProductDetail from './app/pages/ProductDetails';
 import Cart from './app/pages/Cart';
 import Checkout from './app/pages/Checkout';
 import Orders from './app/pages/OrderHistory';
-import '../src/app/styles/app.css'; // Import your custom CSS
+import '../src/app/styles/app.css';
 
 function App() {
   return (
