@@ -10,6 +10,8 @@ HOW TO RUN THE PROJECT
 2. Navigate to the project directory
 3. Install dependencies:
    npm install
+4. Install TailWind plugin:
+   npm install -D @tailwindcss/postcss
 4. Start the development server:
    npm run dev
 5. Open your browser and navigate to the local development URL provided
@@ -118,14 +120,14 @@ ASSUMPTIONS MADE
 
 TECHNOLOGIES USED
 -----------------
-- React 18.3.1
-- React Router 7.13.0
+- React
+- React Router
 - Context API (for state management)
 - localStorage (for data persistence)
 - sessionStorage (for session-based caching)
-- Tailwind CSS 4.1.12 (for styling)
+- Tailwind CSS (for styling)
 - Lucide React (for icons)
-- Vite 6.3.5 (build tool)
+- Vite (build tool)
 
 NOTES
 -----
