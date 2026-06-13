@@ -1,5 +1,8 @@
+import { products as defaultProducts } from '../data/products';
+
 // Product cache utilities
 export const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const PERSISTED_PRODUCTS_KEY = 'customProducts';
 
 export const getProductsFromCache = () => {
   const cached = localStorage.getItem('productCache');
@@ -22,6 +25,30 @@ export const setProductsToCache = (products) => {
     timestamp: Date.now()
   };
   localStorage.setItem('productCache', JSON.stringify(cacheData));
+};
+
+export const getPersistedProducts = () => {
+  const stored = localStorage.getItem(PERSISTED_PRODUCTS_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+export const setPersistedProducts = (products) => {
+  localStorage.setItem(PERSISTED_PRODUCTS_KEY, JSON.stringify(products));
+};
+
+export const addProductToCache = (product) => {
+  const persisted = getPersistedProducts();
+  const updatedPersisted = [...persisted, product];
+  setPersistedProducts(updatedPersisted);
+
+  const mergedProducts = [...defaultProducts, ...updatedPersisted];
+  setProductsToCache(mergedProducts);
+  return mergedProducts;
+};
+
+export const getAllProducts = () => {
+  const persisted = getPersistedProducts();
+  return [...defaultProducts, ...persisted];
 };
 
 // Search history cache

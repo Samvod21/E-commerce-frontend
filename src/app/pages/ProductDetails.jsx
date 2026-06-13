@@ -67,13 +67,12 @@ export const ProductDetails = () => {
           <div className="mb-6">
             <div className="flex items-center space-x-2">
               <span className="font-semibold text-gray-700">Stock Status:</span>
-              <span className={`px-3 py-1 rounded ${
-                product.stock > 10
+              <span className={`px-3 py-1 rounded ${product.stock > 10
                   ? 'bg-green-100 text-green-800'
                   : product.stock > 0
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
-              }`}>
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
                 {product.stock > 0
                   ? `${product.stock} units available`
                   : 'Out of stock'}
@@ -95,6 +94,9 @@ export const ProductDetails = () => {
               <li>• Category: {product.category}</li>
               <li>• Price: ${product.price.toFixed(2)}</li>
               <li>• Available Stock: {product.stock} units</li>
+              {product.sizes && product.sizes.length > 0 && (
+                <li>• Sizes: {product.sizes.join(', ')}</li>
+              )}
             </ul>
           </div>
 

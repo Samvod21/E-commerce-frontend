@@ -4,6 +4,7 @@ import { ProductDetails } from './app/pages/ProductDetails';
 import { Cart } from './app/pages/Cart';
 import { Checkout } from './app/pages/Checkout';
 import { OrderHistory } from './app/pages/OrderHistory';
+import { Dashboard } from './app/pages/Dashboard';
 import { Navbar } from './app/components/Navbar';
 
 const Layout = ({ children }) => {
@@ -31,6 +32,10 @@ export const router = createBrowserRouter([
   {
     path: '/checkout',
     element: <Layout><Checkout /></Layout>
+  },
+  {
+    path: '/dashboard',
+    element: <Layout><Dashboard /></Layout>
   },
   {
     path: '/orders',

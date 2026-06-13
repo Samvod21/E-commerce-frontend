@@ -4,6 +4,7 @@ import { ProductCard } from '../components/ProductCard';
 import { products } from '../data/products';
 import {
   getProductsFromCache,
+  getAllProducts,
   setProductsToCache,
   getSearchHistory,
   addToSearchHistory,
@@ -26,20 +27,18 @@ export const Home = () => {
   // Load products with caching
   useEffect(() => {
     const loadProducts = async () => {
-      // Check cache first
       const cachedProducts = getProductsFromCache();
 
       if (cachedProducts) {
-        // Load from cache instantly
         setAllProducts(cachedProducts);
         setFilteredProducts(cachedProducts);
         setLoading(false);
       } else {
-        // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 500));
-        setAllProducts(products);
-        setFilteredProducts(products);
-        setProductsToCache(products);
+        const combinedProducts = getAllProducts();
+        setAllProducts(combinedProducts);
+        setFilteredProducts(combinedProducts);
+        setProductsToCache(combinedProducts);
         setLoading(false);
       }
     };
