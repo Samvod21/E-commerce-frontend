@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { PlusSquare, Upload, CheckCircle, Trash2 } from 'lucide-react';
-import { addProductToCache } from '../utils/cache';
+import {
+    addProductToCache,
+    getPersistedProducts,
+    updatePersistedProduct,
+    deletePersistedProduct,
+    getOrders,
+    markOrderDelivered,
+    refreshProductsCache
+} from '../utils/cache';
 
 const DEFAULT_CATEGORIES = ['Electronics', 'Sports', 'Home', 'Beauty', 'Toys', 'Accessories', 'Other'];
 const initialState = {
@@ -20,6 +28,10 @@ export const Dashboard = () => {
     const [errors, setErrors] = useState({});
     const [status, setStatus] = useState('');
     const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState('create'); // create | manage | orders
+    const [persistedProducts, setPersistedProducts] = useState(getPersistedProducts());
+    const [editingId, setEditingId] = useState(null);
+    const [orders, setOrders] = useState(getOrders());
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -156,7 +168,18 @@ export const Dashboard = () => {
         }
 
         const productToStore = savedProduct || product;
-        addProductToCache(productToStore);
+
+        if (editingId) {
+            const updated = { ...productToStore, id: editingId };
+            updatePersistedProduct(updated);
+            setPersistedProducts(getPersistedProducts());
+            setStatus('Product updated successfully.');
+            setEditingId(null);
+        } else {
+            addProductToCache(productToStore);
+            setPersistedProducts(getPersistedProducts());
+            setStatus(savedProduct ? 'Product saved to backend and cache.' : 'Product saved locally. Backend endpoint unavailable.');
+        }
 
         setStatus(savedProduct ? 'Product saved to backend and cache.' : 'Product saved locally. Backend endpoint unavailable.');
         setFormData(initialState);
@@ -165,6 +188,39 @@ export const Dashboard = () => {
         setImagePreview('');
         setErrors({});
         setSaving(false);
+    };
+
+    const startEdit = (product) => {
+        setEditingId(product.id);
+        setFormData({
+            name: product.name || '',
+            price: product.price ? String(product.price) : '',
+            category: product.category || '',
+            description: product.description || '',
+            stock: product.stock ? String(product.stock) : '',
+            imageFile: null
+        });
+        setSizes(product.sizes || []);
+        setImagePreview(product.image || '');
+        setActiveTab('create');
+        setStatus('Editing product. Make changes and click Save.');
+    };
+
+    const handleDelete = (id) => {
+        if (!confirm('Delete this product? This action cannot be undone.')) return;
+        deletePersistedProduct(id);
+        setPersistedProducts(getPersistedProducts());
+        refreshProductsCache();
+        setStatus('Product deleted.');
+    };
+
+    const refreshOrders = () => {
+        setOrders(getOrders());
+    };
+
+    const toggleDelivered = (orderId, current) => {
+        markOrderDelivered(orderId, !current);
+        refreshOrders();
     };
 
     return (
@@ -176,19 +232,31 @@ export const Dashboard = () => {
                 </p>
             </div>
 
+            <div className="mb-6 bg-white rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex gap-2">
+                    <button onClick={() => setActiveTab('create')} className={`px-4 py-2 rounded-xl ${activeTab==='create' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Create</button>
+                    <button onClick={() => { setActiveTab('manage'); setPersistedProducts(getPersistedProducts()); }} className={`px-4 py-2 rounded-xl ${activeTab==='manage' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Manage Products</button>
+                    <button onClick={() => { setActiveTab('orders'); refreshOrders(); }} className={`px-4 py-2 rounded-xl ${activeTab==='orders' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Orders</button>
+                </div>
+                <div className="text-sm text-gray-600">Active tab: {activeTab}</div>
+            </div>
+
             <div className="grid gap-8 lg:grid-cols-[1.8fr_1fr]">
                 <div className="bg-white rounded-3xl shadow-sm p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                            <PlusSquare className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900">Create a Product</h2>
-                            <p className="text-sm text-gray-500">Products are pushed to your store inventory and cached for display.</p>
-                        </div>
-                    </div>
+                    {activeTab === 'create' && (
+                        <>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                                    <PlusSquare className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-semibold text-gray-900">{editingId ? 'Edit Product' : 'Create a Product'}</h2>
+                                    <p className="text-sm text-gray-500">Products are pushed to your store inventory and cached for display.</p>
+                                </div>
+                            </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                    ){'}'}
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
@@ -340,7 +408,73 @@ export const Dashboard = () => {
                         >
                             {saving ? 'Saving product...' : 'Save Product'}
                         </button>
-                    </form>
+                            </form>
+                            </>
+                        )}
+                    {activeTab === 'manage' && (
+                        <div>
+                            <h2 className="text-lg font-semibold mb-4">Managed Products</h2>
+                            {persistedProducts.length === 0 ? (
+                                <p className="text-sm text-gray-500">No custom products found. Create one using the Create tab.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {persistedProducts.map(p => (
+                                        <div key={p.id} className="flex items-center justify-between rounded-xl border p-3">
+                                            <div className="flex items-center gap-4">
+                                                <img src={p.image} alt={p.name} className="h-16 w-16 rounded-md object-cover" />
+                                                <div>
+                                                    <div className="font-semibold">{p.name}</div>
+                                                    <div className="text-sm text-gray-500">{p.category} • ${p.price}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => startEdit(p)} className="px-3 py-1 rounded-md bg-yellow-100 text-yellow-800">Edit</button>
+                                                <button onClick={() => handleDelete(p.id)} className="px-3 py-1 rounded-md bg-red-100 text-red-700">Delete</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'orders' && (
+                        <div>
+                            <h2 className="text-lg font-semibold mb-4">Orders</h2>
+                            {orders.length === 0 ? (
+                                <p className="text-sm text-gray-500">No orders yet.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {orders.map(order => (
+                                        <div key={order.id} className="rounded-xl border p-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <div className="font-semibold">Order #{order.id}</div>
+                                                    <div className="text-sm text-gray-500">{new Date(order.date).toLocaleString()}</div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-2 py-1 rounded ${order.delivered ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'}`}>{order.delivered ? 'Delivered' : 'Pending'}</span>
+                                                    <button onClick={() => toggleDelivered(order.id, !!order.delivered)} className="px-3 py-1 rounded-md bg-blue-600 text-white">Toggle Delivered</button>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-3 border-t pt-3">
+                                                {order.items && order.items.map(item => (
+                                                    <div key={item.id || item.name} className="flex items-center gap-3 py-2">
+                                                        <img src={item.image} alt={item.name} className="h-12 w-12 object-cover rounded-md" />
+                                                        <div>
+                                                            <div className="font-medium">{item.name}</div>
+                                                            <div className="text-sm text-gray-500">Qty: {item.quantity || 1} • ${item.price}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-6">

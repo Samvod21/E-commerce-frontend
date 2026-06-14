@@ -46,6 +46,50 @@ export const addProductToCache = (product) => {
   return mergedProducts;
 };
 
+export const updatePersistedProduct = (updatedProduct) => {
+  const persisted = getPersistedProducts();
+  const newPersisted = persisted.map(p => (p.id === updatedProduct.id ? updatedProduct : p));
+  setPersistedProducts(newPersisted);
+  const mergedProducts = [...defaultProducts, ...newPersisted];
+  setProductsToCache(mergedProducts);
+  return mergedProducts;
+};
+
+export const deletePersistedProduct = (id) => {
+  const persisted = getPersistedProducts();
+  const newPersisted = persisted.filter(p => p.id !== id);
+  setPersistedProducts(newPersisted);
+  const mergedProducts = [...defaultProducts, ...newPersisted];
+  setProductsToCache(mergedProducts);
+  return mergedProducts;
+};
+
+export const refreshProductsCache = () => {
+  const persisted = getPersistedProducts();
+  const mergedProducts = [...defaultProducts, ...persisted];
+  setProductsToCache(mergedProducts);
+  return mergedProducts;
+};
+
+// Orders helpers (orders are stored by Checkout.jsx under 'orders')
+const ORDERS_KEY = 'orders';
+
+export const getOrders = () => {
+  const stored = localStorage.getItem(ORDERS_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+export const setOrders = (orders) => {
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+};
+
+export const markOrderDelivered = (orderId, delivered = true) => {
+  const orders = getOrders();
+  const updated = orders.map(o => (o.id === orderId ? { ...o, delivered } : o));
+  setOrders(updated);
+  return updated;
+};
+
 export const getAllProducts = () => {
   const persisted = getPersistedProducts();
   return [...defaultProducts, ...persisted];
