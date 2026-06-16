@@ -1,9 +1,64 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { syncCartWithServer } = useCart();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store token and user info
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Sync cart with server
+        await syncCartWithServer();
+
+        // Redirect to home
+        navigate('/');
+      } else {
+        setError(data.message || 'Login failed');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-sm font-sans">
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Email */}
         <div className="mb-1">
@@ -18,7 +73,10 @@ const Login = () => {
           <input
             placeholder="Enter your Email"
             className="ml-2 flex-1 h-full bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400"
-            type="text"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
 
@@ -35,6 +93,9 @@ const Login = () => {
             placeholder="Enter your Password"
             className="ml-2 flex-1 h-full bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400"
             type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
 
@@ -50,14 +111,23 @@ const Login = () => {
         </div>
 
         {/* Sign In button */}
-        <button className="w-full h-12 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-colors duration-200 cursor-pointer">
-          Sign In
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full h-12 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-colors duration-200 cursor-pointer disabled:opacity-50"
+        >
+          {loading ? 'Signing In...' : 'Sign In'}
         </button>
 
         {/* Sign Up link */}
         <p className="text-center text-sm text-gray-600 mt-4">
           Don't have an account?
-          <span className="text-blue-500 font-medium cursor-pointer hover:underline ml-1">Sign Up</span>
+          <span
+            className="text-blue-500 font-medium cursor-pointer hover:underline ml-1"
+            onClick={() => navigate('/signup')}
+          >
+            Sign Up
+          </span>
         </p>
       </div>
     </div>
