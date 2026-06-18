@@ -8,7 +8,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { syncCartWithServer } = useCart();
+  const { syncCartWithServer, setIsAuthenticated } = useCart();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -33,6 +33,7 @@ const Login = () => {
         // Store token and user info
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        setIsAuthenticated(true);
 
         // Sync cart with server
         await syncCartWithServer();

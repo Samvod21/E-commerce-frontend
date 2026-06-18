@@ -5,6 +5,8 @@ import { Cart } from './app/pages/Cart';
 import { Checkout } from './app/pages/Checkout';
 import { OrderHistory } from './app/pages/OrderHistory';
 import { Dashboard } from './app/pages/Dashboard';
+import Login from './app/pages/Login';
+import Signup from './app/pages/Signup';
 import { Navbar } from './app/components/Navbar';
 
 const Layout = ({ children }) => {
@@ -40,6 +42,14 @@ export const router = createBrowserRouter([
   {
     path: '/orders',
     element: <Layout><OrderHistory /></Layout>
+  },
+  {
+    path: '/login',
+    element: <Layout><Login /></Layout>
+  },
+  {
+    path: '/signup',
+    element: <Layout><Signup /></Layout>
   },
   {
     path: '*',

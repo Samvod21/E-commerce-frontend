@@ -10,7 +10,7 @@ import {
     refreshProductsCache
 } from '../utils/cache';
 
-const DEFAULT_CATEGORIES = ['Electronics', 'Sports', 'Home', 'Beauty', 'Toys', 'Accessories', 'Other'];
+const DEFAULT_CATEGORIES = ['Electronics', 'Clothing', 'Sports', 'Home', 'Beauty', 'Toys', 'Accessories', 'Other'];
 const initialState = {
     name: '',
     price: '',
@@ -181,8 +181,7 @@ export const Dashboard = () => {
             setStatus(savedProduct ? 'Product saved to backend and cache.' : 'Product saved locally. Backend endpoint unavailable.');
         }
 
-        setStatus(savedProduct ? 'Product saved to backend and cache.' : 'Product saved locally. Backend endpoint unavailable.');
-        setFormData(initialState);
+            setFormData(initialState);
         setSizes([]);
         setSizeInput('');
         setImagePreview('');
@@ -256,7 +255,6 @@ export const Dashboard = () => {
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
-                    ){'}'}
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>

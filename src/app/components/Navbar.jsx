@@ -1,10 +1,16 @@
-import { Link } from 'react-router';
-import { ShoppingCart, Home, History } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { ShoppingCart, Home, History, LogOut, User } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 export const Navbar = () => {
-  const { getCartCount } = useCart();
+  const navigate = useNavigate();
+  const { getCartCount, isAuthenticated, logout } = useCart();
   const cartCount = getCartCount();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -43,6 +49,24 @@ export const Navbar = () => {
                 </span>
               )}
             </Link>
+
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-1 text-gray-700 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Logout</span>
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                <User className="h-5 w-5" />
+                <span>Login</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

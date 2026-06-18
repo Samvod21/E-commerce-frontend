@@ -43,7 +43,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { syncCartWithServer } = useCart();
+  const { syncCartWithServer, setIsAuthenticated } = useCart();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -92,6 +92,7 @@ const Signup = () => {
         // Store token and user info
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        setIsAuthenticated(true);
 
         // Sync cart with server
         await syncCartWithServer();
@@ -129,7 +130,7 @@ const Signup = () => {
             className={`rounded-xl py-3 text-sm font-semibold transition-colors duration-200 ${role === 'buyer'
               ? 'bg-white shadow-sm text-blue-600'
               : 'text-gray-600 hover:bg-white'
-            }`}
+              }`}
           >
             Buyer / Purchaser
           </button>
@@ -139,7 +140,7 @@ const Signup = () => {
             className={`rounded-xl py-3 text-sm font-semibold transition-colors duration-200 ${role === 'seller'
               ? 'bg-white shadow-sm text-blue-600'
               : 'text-gray-600 hover:bg-white'
-            }`}
+              }`}
           >
             Seller / Company
           </button>
