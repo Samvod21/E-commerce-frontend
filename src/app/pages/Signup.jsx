@@ -33,6 +33,8 @@ const FloatingLabel = ({ type, label, className = '', name, autoComplete = 'off'
 };
 
 const Signup = () => {
+  const [role, setRole] = useState('buyer');
+  const [companyName, setCompanyName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -55,6 +57,12 @@ const Signup = () => {
       return;
     }
 
+    if (role === 'seller' && !companyName.trim()) {
+      setError('Company name is required for seller accounts');
+      setLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
@@ -68,11 +76,13 @@ const Signup = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          role,
           firstName,
           lastName,
           email,
           password,
           confirmPassword,
+          companyName: role === 'seller' ? companyName.trim() : undefined,
         }),
       });
 
@@ -112,6 +122,29 @@ const Signup = () => {
 
         <p className="text-sm text-gray-500">Signup now and get full access to our app.</p>
 
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-2 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setRole('buyer')}
+            className={`rounded-xl py-3 text-sm font-semibold transition-colors duration-200 ${role === 'buyer'
+              ? 'bg-white shadow-sm text-blue-600'
+              : 'text-gray-600 hover:bg-white'
+            }`}
+          >
+            Buyer / Purchaser
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('seller')}
+            className={`rounded-xl py-3 text-sm font-semibold transition-colors duration-200 ${role === 'seller'
+              ? 'bg-white shadow-sm text-blue-600'
+              : 'text-gray-600 hover:bg-white'
+            }`}
+          >
+            Seller / Company
+          </button>
+        </div>
+
         {error && (
           <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
             {error}
@@ -140,6 +173,17 @@ const Signup = () => {
               onChange={(e) => setLastName(e.target.value)}
             />
           </div>
+
+          {role === 'seller' && (
+            <FloatingLabel
+              type="text"
+              label="Company Name"
+              name="companyName"
+              autoComplete="organization"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+            />
+          )}
 
           <FloatingLabel
             type="email"
