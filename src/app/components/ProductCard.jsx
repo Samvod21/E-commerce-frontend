@@ -11,7 +11,7 @@ export const ProductCard = ({ product }) => {
   };
 
   return (
-    <Link to={`/product/${product.id}`} className="group">
+    <Link to={`/product/${product.id ?? product._id}`} className="group">
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
         <div className="aspect-w-16 aspect-h-12 overflow-hidden bg-gray-200">
           <img
@@ -32,13 +32,12 @@ export const ProductCard = ({ product }) => {
             <span className="text-2xl font-bold text-blue-600">
               ${product.price.toFixed(2)}
             </span>
-            <span className={`text-sm px-2 py-1 rounded ${
-              product.stock > 10
+            <span className={`text-sm px-2 py-1 rounded ${product.stock > 10
                 ? 'bg-green-100 text-green-800'
                 : product.stock > 0
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
               {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
             </span>
           </div>

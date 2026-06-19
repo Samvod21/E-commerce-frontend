@@ -1,18 +1,85 @@
 import { useParams, Link, useNavigate } from 'react-router';
-import { ArrowLeft, ShoppingCart, Check } from 'lucide-react';
-import { products } from '../data/products';
+import { ArrowLeft, ShoppingCart, Check, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api/products', '')
+  : 'http://localhost:5000';
+
+const withImageUrl = (product) => {
+  if (!product?.image) return product;
+  if (typeof product.image === 'string') {
+    // New approach: image is stored as data URL in Mongo, so just keep it.
+    // Also keep backwards compatibility for old /uploads paths.
+    if (product.image.startsWith('data:image/')) return product;
+    if (product.image.startsWith('/uploads/')) {
+      return { ...product, image: `${API_BASE}${product.image}` };
+    }
+  }
+  return product;
+};
 
 export const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const product = products.find(p => p.id === parseInt(id));
+  useEffect(() => {
+    let cancelled = false;
 
-  if (!product) {
+    const run = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/products/${id}`);
+        const data = await res.json();
+        if (cancelled) return;
+
+        if (res.ok) {
+          const normalised = withImageUrl(data);
+          // Ensure product.id matches the route param (backend uses Mongo _id)
+          normalised.id = String(normalised.id ?? normalised._id ?? id);
+          setProduct(normalised);
+        } else {
+          setProduct(null);
+        }
+      } catch (e) {
+        console.warn('Could not load product details:', e);
+        if (!cancelled) setProduct(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  const productNotFound = useMemo(() => !loading && !product, [loading, product]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (productNotFound) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
@@ -25,11 +92,8 @@ export const ProductDetails = () => {
     );
   }
 
-  const handleAddToCart = () => {
-    addToCart(product);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+  if (!product) return null;
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -68,10 +132,10 @@ export const ProductDetails = () => {
             <div className="flex items-center space-x-2">
               <span className="font-semibold text-gray-700">Stock Status:</span>
               <span className={`px-3 py-1 rounded ${product.stock > 10
-                  ? 'bg-green-100 text-green-800'
-                  : product.stock > 0
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
+                ? 'bg-green-100 text-green-800'
+                : product.stock > 0
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
                 }`}>
                 {product.stock > 0
                   ? `${product.stock} units available`

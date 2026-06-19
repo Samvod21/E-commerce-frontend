@@ -1,16 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
-import { products } from '../data/products';
 import {
   getProductsFromCache,
-  getAllProducts,
   setProductsToCache,
   getSearchHistory,
   addToSearchHistory,
   saveFilterSelection,
-  getFilterSelection
+  getFilterSelection,
+  getAllProducts
 } from '../utils/cache';
+
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api/products', '')
+  : 'http://localhost:5000';
+
+const withImageUrl = (product) => {
+  // Backend returns image: "/uploads/<filename>"
+  if (!product?.image) return product;
+  if (typeof product.image === 'string') {
+    // New approach: image is stored as data URL in Mongo, so just keep it.
+    // Also keep backwards compatibility for old /uploads paths.
+    if (product.image.startsWith('data:image/')) return product;
+    if (product.image.startsWith('/uploads/')) {
+      return { ...product, image: `${API_BASE}${product.image}` };
+    }
+  }
+  return product;
+};
 
 export const Home = () => {
   const [allProducts, setAllProducts] = useState([]);
@@ -22,31 +39,61 @@ export const Home = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Get unique categories
-  const categories = ['All', ...new Set(products.map(p => p.category))];
+  const categories = useMemo(() => {
+    return ['All', ...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  }, [allProducts]);
 
-  // Load products with caching
+  // Load products (prefer backend, fallback to cached/local)
   useEffect(() => {
     const loadProducts = async () => {
       const cachedProducts = getProductsFromCache();
-
       if (cachedProducts) {
-        setAllProducts(cachedProducts);
-        setFilteredProducts(cachedProducts);
+        const hydrated = cachedProducts.map(withImageUrl);
+        setAllProducts(hydrated);
+        setFilteredProducts(hydrated);
         setLoading(false);
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const combinedProducts = getAllProducts();
-        setAllProducts(combinedProducts);
-        setFilteredProducts(combinedProducts);
-        setProductsToCache(combinedProducts);
-        setLoading(false);
+        return;
       }
+
+      // Backend fetch
+      // Ensure each product has a stable `id` for routing.
+      // For Mongo docs, backend returns `_id`, so we normalize to `id` before caching.
+
+
+      try {
+        const res = await fetch(`${API_BASE}/api/products`);
+        const data = await res.json();
+        const backendProducts = Array.isArray(data) ? data : (data?.products ?? []);
+        const normalised = backendProducts.map(withImageUrl).map((p) => ({
+          ...p,
+          // Use Mongo _id for routing when backend doesn't provide id.
+          id: String(p.id ?? p._id ?? p.productId ?? ''),
+        })).filter(p => p.id);
+
+        setAllProducts(normalised);
+        setFilteredProducts(normalised);
+        // Cache normalized products so routing works with Mongo _id.
+        setProductsToCache(normalised);
+        setLoading(false);
+        return;
+      } catch (e) {
+        console.warn('Backend product fetch failed, falling back to local cache:', e);
+      }
+
+      // Fallback: local cached products (defaultProducts + persisted)
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const combinedProducts = getAllProducts().map(withImageUrl);
+      setAllProducts(combinedProducts);
+      setFilteredProducts(combinedProducts);
+      setProductsToCache(combinedProducts);
+      setLoading(false);
     };
 
     loadProducts();
     setSearchHistory(getSearchHistory());
     setSelectedCategory(getFilterSelection());
   }, []);
+
 
   // Filter products based on search and category
   useEffect(() => {
