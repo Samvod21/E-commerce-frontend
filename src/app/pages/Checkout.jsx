@@ -17,7 +17,7 @@ export const Checkout = () => {
 
   if (cart.length === 0 && !orderPlaced) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
           <Link to="/" className="text-blue-600 hover:underline">
@@ -51,55 +51,68 @@ export const Checkout = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     // Clear error when user types
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
+    if (!validateForm()) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const API_BASE = import.meta.env.VITE_API_URL
+        ? import.meta.env.VITE_API_URL.replace('/api/products', '')
+        : 'http://localhost:5000';
+
+      const res = await fetch(`${API_BASE}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ customerInfo: formData })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data?.message || 'Failed to place order');
+      }
+
+      // Clear cart via backend (also ensures server-side item quantities reduced)
+      await clearCart();
+
+      setOrderPlaced(true);
+
+      setTimeout(() => {
+        navigate('/orders');
+      }, 1500);
+    } catch (err) {
+      console.warn('Order placement failed:', err);
+      setErrors((prev) => ({
+        ...prev,
+        form: 'Could not place order. Please try again.'
+      }));
     }
-
-    // Create order object
-    const order = {
-      id: Date.now(),
-      date: new Date().toISOString(),
-      items: cart,
-      total: getCartTotal(),
-      customerInfo: formData
-    };
-
-    // Save to localStorage
-    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    existingOrders.push(order);
-    localStorage.setItem('orders', JSON.stringify(existingOrders));
-
-    // Clear cart
-    clearCart();
-
-    // Show confirmation
-    setOrderPlaced(true);
-
-    // Redirect to orders after 3 seconds
-    setTimeout(() => {
-      navigate('/orders');
-    }, 3000);
   };
 
   if (orderPlaced) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="max-w-md mx-auto text-center py-12">
-          <CheckCircle className="h-24 w-24 text-green-500 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
-          <p className="text-gray-600 mb-6">
-            Thank you for your purchase. Your order has been confirmed.
-          </p>
+          <CheckCircle className="mx-auto mb-4 h-20 w-20 text-green-500 sm:h-24 sm:w-24" />
+          <h2 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">Order Placed Successfully!</h2>
+          <p className="text-gray-600 mb-6">Thank you for your purchase. Your order has been confirmed.</p>
           <p className="text-sm text-gray-500">Redirecting to order history...</p>
         </div>
       </div>
@@ -107,13 +120,13 @@ export const Checkout = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <h1 className="mb-5 text-3xl font-bold text-gray-900 sm:mb-8">Checkout</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
         {/* Checkout Form */}
         <div>
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="rounded-lg bg-white p-4 shadow-md sm:p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Shipping Information</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -127,14 +140,11 @@ export const Checkout = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full rounded-lg border px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2 ${errors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="John Doe"
                 />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                )}
+                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
               </div>
 
               <div>
@@ -147,14 +157,11 @@ export const Checkout = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full rounded-lg border px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2 ${errors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="john@example.com"
                 />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
               </div>
 
               <div>
@@ -167,15 +174,14 @@ export const Checkout = () => {
                   value={formData.address}
                   onChange={handleInputChange}
                   rows={3}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.address ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full rounded-lg border px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2 ${errors.address ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="123 Main St, City, State, ZIP"
                 />
-                {errors.address && (
-                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
-                )}
+                {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
               </div>
+
+              {errors.form && <p className="text-sm text-red-600">{errors.form}</p>}
 
               <button
                 type="submit"
@@ -189,22 +195,22 @@ export const Checkout = () => {
 
         {/* Order Summary */}
         <div>
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="rounded-lg bg-white p-4 shadow-md sm:p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
 
             <div className="space-y-4 mb-6">
-              {cart.map(item => (
-                <div key={item.id} className="flex items-center space-x-4">
+              {cart.map((item) => (
+                <div key={item.id} className="flex items-start gap-3 sm:items-center sm:gap-4">
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-16 h-16 object-cover rounded"
+                    className="h-16 w-16 shrink-0 rounded object-cover"
                   />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-semibold text-gray-900">{item.name}</h3>
                     <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                   </div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="shrink-0 font-semibold text-gray-900">
                     ${(item.price * item.quantity).toFixed(2)}
                   </p>
                 </div>
@@ -222,9 +228,7 @@ export const Checkout = () => {
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="text-lg font-bold">Total</span>
-                <span className="text-lg font-bold text-blue-600">
-                  ${getCartTotal().toFixed(2)}
-                </span>
+                <span className="text-lg font-bold text-blue-600">${getCartTotal().toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -233,3 +237,4 @@ export const Checkout = () => {
     </div>
   );
 };
+

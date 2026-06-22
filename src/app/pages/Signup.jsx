@@ -111,8 +111,8 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-sm font-sans flex flex-col gap-3">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
+      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-white p-5 font-sans shadow-sm sm:p-6">
 
         {/* Title with pulse dot */}
         <p className="text-2xl font-semibold text-blue-600 tracking-tight flex items-center pl-8 relative">
@@ -123,11 +123,11 @@ const Signup = () => {
 
         <p className="text-sm text-gray-500">Signup now and get full access to our app.</p>
 
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-2 grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-2">
           <button
             type="button"
             onClick={() => setRole('buyer')}
-            className={`rounded-xl py-3 text-sm font-semibold transition-colors duration-200 ${role === 'buyer'
+            className={`rounded-xl py-3 text-xs font-semibold transition-colors duration-200 sm:text-sm ${role === 'buyer'
               ? 'bg-white shadow-sm text-blue-600'
               : 'text-gray-600 hover:bg-white'
               }`}
@@ -137,7 +137,7 @@ const Signup = () => {
           <button
             type="button"
             onClick={() => setRole('seller')}
-            className={`rounded-xl py-3 text-sm font-semibold transition-colors duration-200 ${role === 'seller'
+            className={`rounded-xl py-3 text-xs font-semibold transition-colors duration-200 sm:text-sm ${role === 'seller'
               ? 'bg-white shadow-sm text-blue-600'
               : 'text-gray-600 hover:bg-white'
               }`}
@@ -154,7 +154,7 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           {/* First name / Last name row */}
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
             <FloatingLabel
               type="text"
               label="Firstname"

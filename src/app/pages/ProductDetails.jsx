@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router';
 import { ArrowLeft, ShoppingCart, Check, Loader2 } from 'lucide-react';
-import { useCart } from '../context/CartContext';
 import { useEffect, useMemo, useState } from 'react';
+import { useCart } from '../context/CartContext';
 
 const API_BASE = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api/products', '')
@@ -10,8 +10,6 @@ const API_BASE = import.meta.env.VITE_API_URL
 const withImageUrl = (product) => {
   if (!product?.image) return product;
   if (typeof product.image === 'string') {
-    // New approach: image is stored as data URL in Mongo, so just keep it.
-    // Also keep backwards compatibility for old /uploads paths.
     if (product.image.startsWith('data:image/')) return product;
     if (product.image.startsWith('/uploads/')) {
       return { ...product, image: `${API_BASE}${product.image}` };
@@ -40,7 +38,6 @@ export const ProductDetails = () => {
 
         if (res.ok) {
           const normalised = withImageUrl(data);
-          // Ensure product.id matches the route param (backend uses Mongo _id)
           normalised.id = String(normalised.id ?? normalised._id ?? id);
           setProduct(normalised);
         } else {
@@ -71,8 +68,8 @@ export const ProductDetails = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="flex min-h-[50vh] items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
         </div>
       </div>
@@ -81,9 +78,9 @@ export const ProductDetails = () => {
 
   if (productNotFound) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h2>
+          <h2 className="mb-4 text-2xl font-bold text-gray-900">Product Not Found</h2>
           <Link to="/" className="text-blue-600 hover:underline">
             Return to Home
           </Link>
@@ -94,44 +91,40 @@ export const ProductDetails = () => {
 
   if (!product) return null;
 
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-6"
+        className="mb-5 flex items-center gap-2 text-gray-600 hover:text-gray-900 sm:mb-6"
       >
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
       </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Product Image */}
-        <div className="bg-gray-100 rounded-lg overflow-hidden">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
+        <div className="overflow-hidden rounded-lg bg-gray-100">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-96 object-cover"
+            className="h-72 w-full object-cover sm:h-96"
           />
         </div>
 
-        {/* Product Details */}
         <div>
           <div className="mb-4">
-            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm mb-2">
+            <span className="mb-2 inline-block rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800">
               {product.category}
             </span>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-            <p className="text-4xl font-bold text-blue-600 mb-4">
+            <h1 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">{product.name}</h1>
+            <p className="mb-4 text-3xl font-bold text-blue-600 sm:text-4xl">
               ${product.price.toFixed(2)}
             </p>
           </div>
 
-          {/* Stock Status */}
           <div className="mb-6">
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="font-semibold text-gray-700">Stock Status:</span>
-              <span className={`px-3 py-1 rounded ${product.stock > 10
+              <span className={`rounded px-3 py-1 ${product.stock > 10
                 ? 'bg-green-100 text-green-800'
                 : product.stock > 0
                   ? 'bg-yellow-100 text-yellow-800'
@@ -144,32 +137,29 @@ export const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Description */}
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Description</h2>
-            <p className="text-gray-700 leading-relaxed">{product.description}</p>
+            <h2 className="mb-2 text-xl font-semibold text-gray-900">Description</h2>
+            <p className="leading-relaxed text-gray-700">{product.description}</p>
           </div>
 
-          {/* Product Features */}
-          <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Product Features</h3>
-            <ul className="space-y-1 text-gray-700">
-              <li>• Product ID: #{product.id}</li>
-              <li>• Category: {product.category}</li>
-              <li>• Price: ${product.price.toFixed(2)}</li>
-              <li>• Available Stock: {product.stock} units</li>
+          <div className="mb-6 rounded-lg bg-gray-50 p-4">
+            <h3 className="mb-2 font-semibold text-gray-900">Product Features</h3>
+            <ul className="space-y-1 break-words text-gray-700">
+              <li>Product ID: #{product.id}</li>
+              <li>Category: {product.category}</li>
+              <li>Price: ${product.price.toFixed(2)}</li>
+              <li>Available Stock: {product.stock} units</li>
               {product.sizes && product.sizes.length > 0 && (
-                <li>• Sizes: {product.sizes.join(', ')}</li>
+                <li>Sizes: {product.sizes.join(', ')}</li>
               )}
             </ul>
           </div>
 
-          {/* Add to Cart Button */}
           <div className="space-y-3">
             <button
               onClick={handleAddToCart}
               disabled={product.stock === 0}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center space-x-2 text-lg font-semibold"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:text-lg"
             >
               {added ? (
                 <>
@@ -186,7 +176,7 @@ export const ProductDetails = () => {
 
             <Link
               to="/cart"
-              className="w-full block text-center border-2 border-blue-600 text-blue-600 py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors duration-200"
+              className="block w-full rounded-lg border-2 border-blue-600 px-6 py-3 text-center text-blue-600 transition-colors duration-200 hover:bg-blue-50"
             >
               View Cart
             </Link>

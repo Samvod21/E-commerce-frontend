@@ -1,99 +1,23 @@
-import { products as defaultProducts } from '../data/products';
+// Cache utilities are intentionally removed.
+// Products must come from the backend MongoDB only.
 
-// Product cache utilities
-export const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-const PERSISTED_PRODUCTS_KEY = 'customProducts';
+// Orders helpers (kept as safe defaults; orders are managed by backend)
+export const getOrders = () => [];
+export const setOrders = () => { };
+export const markOrderDelivered = () => { };
 
-export const getProductsFromCache = () => {
-  const cached = localStorage.getItem('productCache');
-  if (!cached) return null;
+// Backoffice product helpers are no-ops in this configuration.
+// Products are expected to be created/updated/deleted via backend APIs.
+export const getPersistedProducts = () => [];
+export const setPersistedProducts = () => { };
+export const addProductToCache = (product) => product;
+export const updatePersistedProduct = (updatedProduct) => updatedProduct;
+export const deletePersistedProduct = () => { };
+export const refreshProductsCache = () => [];
+export const getProductsFromCache = () => null;
+export const setProductsToCache = () => { };
+export const getAllProducts = () => [];
 
-  const { products, timestamp } = JSON.parse(cached);
-  const now = Date.now();
-
-  // Check if cache is still valid (within 5 minutes)
-  if (now - timestamp < CACHE_DURATION) {
-    return products;
-  }
-
-  return null;
-};
-
-export const setProductsToCache = (products) => {
-  const cacheData = {
-    products,
-    timestamp: Date.now()
-  };
-  localStorage.setItem('productCache', JSON.stringify(cacheData));
-};
-
-export const getPersistedProducts = () => {
-  const stored = localStorage.getItem(PERSISTED_PRODUCTS_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
-
-export const setPersistedProducts = (products) => {
-  localStorage.setItem(PERSISTED_PRODUCTS_KEY, JSON.stringify(products));
-};
-
-export const addProductToCache = (product) => {
-  const persisted = getPersistedProducts();
-  const updatedPersisted = [...persisted, product];
-  setPersistedProducts(updatedPersisted);
-
-  const mergedProducts = [...defaultProducts, ...updatedPersisted];
-  setProductsToCache(mergedProducts);
-  return mergedProducts;
-};
-
-export const updatePersistedProduct = (updatedProduct) => {
-  const persisted = getPersistedProducts();
-  const newPersisted = persisted.map(p => (p.id === updatedProduct.id ? updatedProduct : p));
-  setPersistedProducts(newPersisted);
-  const mergedProducts = [...defaultProducts, ...newPersisted];
-  setProductsToCache(mergedProducts);
-  return mergedProducts;
-};
-
-export const deletePersistedProduct = (id) => {
-  const persisted = getPersistedProducts();
-  const newPersisted = persisted.filter(p => p.id !== id);
-  setPersistedProducts(newPersisted);
-  const mergedProducts = [...defaultProducts, ...newPersisted];
-  setProductsToCache(mergedProducts);
-  return mergedProducts;
-};
-
-export const refreshProductsCache = () => {
-  const persisted = getPersistedProducts();
-  const mergedProducts = [...defaultProducts, ...persisted];
-  setProductsToCache(mergedProducts);
-  return mergedProducts;
-};
-
-// Orders helpers (orders are stored by Checkout.jsx under 'orders')
-const ORDERS_KEY = 'orders';
-
-export const getOrders = () => {
-  const stored = localStorage.getItem(ORDERS_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
-
-export const setOrders = (orders) => {
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-};
-
-export const markOrderDelivered = (orderId, delivered = true) => {
-  const orders = getOrders();
-  const updated = orders.map(o => (o.id === orderId ? { ...o, delivered } : o));
-  setOrders(updated);
-  return updated;
-};
-
-export const getAllProducts = () => {
-  const persisted = getPersistedProducts();
-  return [...defaultProducts, ...persisted];
-};
 
 // Search history cache
 export const getSearchHistory = () => {

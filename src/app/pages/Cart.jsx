@@ -7,10 +7,10 @@ export const Cart = () => {
 
   if (cart.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="text-center py-12">
-          <ShoppingBag className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+          <ShoppingBag className="mx-auto mb-4 h-20 w-20 text-gray-300 sm:h-24 sm:w-24" />
+          <h2 className="mb-2 text-2xl font-bold text-gray-900">Your cart is empty</h2>
           <p className="text-gray-600 mb-6">Add some products to get started!</p>
           <Link
             to="/"
@@ -24,28 +24,28 @@ export const Cart = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
+    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <h1 className="mb-5 text-3xl font-bold text-gray-900 sm:mb-8">Shopping Cart</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {cart.map(item => (
               <div key={item.id} className="border-b last:border-b-0">
-                <div className="p-4 flex items-center space-x-4">
+                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
                   {/* Product Image */}
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-24 h-24 object-cover rounded"
+                    className="h-40 w-full rounded object-cover sm:h-24 sm:w-24"
                   />
 
                   {/* Product Details */}
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     <Link
                       to={`/product/${item.id}`}
-                      className="text-lg font-semibold text-gray-900 hover:text-blue-600"
+                      className="block truncate text-lg font-semibold text-gray-900 hover:text-blue-600"
                     >
                       {item.name}
                     </Link>
@@ -56,7 +56,9 @@ export const Cart = () => {
                   </div>
 
                   {/* Quantity Controls */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-between gap-3 sm:justify-start">
+                    <span className="text-sm font-medium text-gray-600 sm:hidden">Quantity</span>
+                    <div className="flex items-center gap-2">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
                       className="p-1 rounded bg-gray-200 hover:bg-gray-300"
@@ -71,10 +73,11 @@ export const Cart = () => {
                     >
                       <Plus className="h-4 w-4" />
                     </button>
+                    </div>
                   </div>
 
-                  {/* Item Total */}
-                  <div className="text-right">
+                  <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
+                    <span className="text-sm font-medium text-gray-600 sm:hidden">Item total</span>
                     <p className="text-lg font-bold text-gray-900">
                       ${(item.price * item.quantity).toFixed(2)}
                     </p>
@@ -83,9 +86,10 @@ export const Cart = () => {
                   {/* Remove Button */}
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded"
+                    className="inline-flex items-center justify-center gap-2 rounded border border-red-100 px-3 py-2 text-red-600 transition-colors hover:bg-red-50 sm:border-0 sm:p-2"
                   >
                     <Trash2 className="h-5 w-5" />
+                    <span className="sm:hidden">Remove</span>
                   </button>
                 </div>
               </div>
@@ -95,7 +99,7 @@ export const Cart = () => {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
+          <div className="rounded-lg bg-white p-5 shadow-md lg:sticky lg:top-20 lg:p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
 
             <div className="space-y-3 mb-6">

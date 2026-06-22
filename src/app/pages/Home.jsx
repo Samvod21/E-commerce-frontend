@@ -2,14 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
 import {
-  getProductsFromCache,
-  setProductsToCache,
   getSearchHistory,
   addToSearchHistory,
   saveFilterSelection,
-  getFilterSelection,
-  getAllProducts
+  getFilterSelection
 } from '../utils/cache';
+
 
 const API_BASE = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api/products', '')
@@ -31,11 +29,12 @@ const withImageUrl = (product) => {
 
 export const Home = () => {
   const [allProducts, setAllProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const [selectedCategory, setSelectedCategory] = useState(() => getFilterSelection());
   const [loading, setLoading] = useState(true);
-  const [searchHistory, setSearchHistory] = useState([]);
+  const [searchHistory, setSearchHistory] = useState(() => getSearchHistory());
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Get unique categories
@@ -43,76 +42,51 @@ export const Home = () => {
     return ['All', ...new Set(allProducts.map(p => p.category).filter(Boolean))];
   }, [allProducts]);
 
-  // Load products (prefer backend, fallback to cached/local)
-  useEffect(() => {
-    const loadProducts = async () => {
-      const cachedProducts = getProductsFromCache();
-      if (cachedProducts) {
-        const hydrated = cachedProducts.map(withImageUrl);
-        setAllProducts(hydrated);
-        setFilteredProducts(hydrated);
-        setLoading(false);
-        return;
-      }
-
-      // Backend fetch
-      // Ensure each product has a stable `id` for routing.
-      // For Mongo docs, backend returns `_id`, so we normalize to `id` before caching.
-
-
-      try {
-        const res = await fetch(`${API_BASE}/api/products`);
-        const data = await res.json();
-        const backendProducts = Array.isArray(data) ? data : (data?.products ?? []);
-        const normalised = backendProducts.map(withImageUrl).map((p) => ({
-          ...p,
-          // Use Mongo _id for routing when backend doesn't provide id.
-          id: String(p.id ?? p._id ?? p.productId ?? ''),
-        })).filter(p => p.id);
-
-        setAllProducts(normalised);
-        setFilteredProducts(normalised);
-        // Cache normalized products so routing works with Mongo _id.
-        setProductsToCache(normalised);
-        setLoading(false);
-        return;
-      } catch (e) {
-        console.warn('Backend product fetch failed, falling back to local cache:', e);
-      }
-
-      // Fallback: local cached products (defaultProducts + persisted)
-      await new Promise(resolve => setTimeout(resolve, 200));
-      const combinedProducts = getAllProducts().map(withImageUrl);
-      setAllProducts(combinedProducts);
-      setFilteredProducts(combinedProducts);
-      setProductsToCache(combinedProducts);
-      setLoading(false);
-    };
-
-    loadProducts();
-    setSearchHistory(getSearchHistory());
-    setSelectedCategory(getFilterSelection());
-  }, []);
-
-
-  // Filter products based on search and category
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     let filtered = allProducts;
 
-    // Filter by category
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(p => p.category === selectedCategory);
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    setFilteredProducts(filtered);
-  }, [searchQuery, selectedCategory, allProducts]);
+    return filtered;
+  }, [allProducts, searchQuery, selectedCategory]);
+
+  // Load products directly from backend (no product caching/localstorage)
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE}/api/products`);
+        const data = await res.json();
+        const backendProducts = Array.isArray(data) ? data : (data?.products ?? []);
+        const normalised = backendProducts
+          .map(withImageUrl)
+          .map((p) => ({
+            ...p,
+            // Use Mongo _id for routing when backend doesn't provide id.
+            id: String(p.id ?? p._id ?? p.productId ?? ''),
+          }))
+          .filter((p) => p.id);
+
+        setAllProducts(normalised);
+      } catch (e) {
+        console.warn('Backend product fetch failed:', e);
+        setAllProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -152,12 +126,12 @@ export const Home = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">Product Catalog</h1>
+    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <h1 className="mb-5 text-3xl font-bold text-gray-900 sm:mb-8 sm:text-4xl">Product Catalog</h1>
 
       {/* Search and Filter Section */}
-      <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mb-6 rounded-lg bg-white p-4 shadow-md sm:mb-8 sm:p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Search Box */}
           <div className="relative">
             <form onSubmit={handleSearchSubmit}>
@@ -170,7 +144,7 @@ export const Home = () => {
                   onChange={handleSearchChange}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2"
                 />
               </div>
             </form>
@@ -199,7 +173,7 @@ export const Home = () => {
             <select
               value={selectedCategory}
               onChange={handleCategoryChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2"
             >
               {categories.map(category => (
                 <option key={category} value={category}>
@@ -212,15 +186,15 @@ export const Home = () => {
 
         {/* Active Filters Display */}
         {(searchQuery || selectedCategory !== 'All') && (
-          <div className="mt-4 flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Active filters:</span>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="w-full text-sm text-gray-600 sm:w-auto">Active filters:</span>
             {searchQuery && (
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+              <span className="max-w-full truncate rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800">
                 Search: "{searchQuery}"
               </span>
             )}
             {selectedCategory !== 'All' && (
-              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+              <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-800">
                 Category: {selectedCategory}
               </span>
             )}
@@ -230,7 +204,7 @@ export const Home = () => {
 
       {/* Products Grid */}
       {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
           {filteredProducts.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}

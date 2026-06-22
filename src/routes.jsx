@@ -8,6 +8,8 @@ import { Dashboard } from './app/pages/Dashboard';
 import Login from './app/pages/Login';
 import Signup from './app/pages/Signup';
 import { Navbar } from './app/components/Navbar';
+import { RequireSeller } from './app/components/RequireSeller';
+
 
 const Layout = ({ children }) => {
   return (
@@ -37,8 +39,16 @@ export const router = createBrowserRouter([
   },
   {
     path: '/dashboard',
-    element: <Layout><Dashboard /></Layout>
+    element: (
+      <Layout>
+        {/* Seller-only dashboard */}
+        <RequireSeller>
+          <Dashboard />
+        </RequireSeller>
+      </Layout>
+    )
   },
+
   {
     path: '/orders',
     element: <Layout><OrderHistory /></Layout>
