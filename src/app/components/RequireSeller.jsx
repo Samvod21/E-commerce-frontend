@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL.replace('/api/products', '')

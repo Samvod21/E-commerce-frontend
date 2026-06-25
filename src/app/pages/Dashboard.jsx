@@ -158,9 +158,11 @@ export const Dashboard = () => {
         let savedProduct = null;
 
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(apiUrl, {
                 method: 'POST',
-                body: formDataToSend
+                body: formDataToSend,
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
 
             if (response.ok) {
@@ -171,9 +173,11 @@ export const Dashboard = () => {
             } else {
                 const errorText = await response.text();
                 console.warn('Dashboard save failed:', response.status, errorText);
+                setStatus(`Product save failed (${response.status}).`);
             }
         } catch (error) {
             console.warn('Dashboard save error:', error);
+            setStatus('Product save failed (network error).');
         }
 
         const productToStore = savedProduct || product;
@@ -194,9 +198,11 @@ export const Dashboard = () => {
                 }
 
                 const apiUrl = import.meta.env.VITE_API_URL || '/api/products';
+                const token = localStorage.getItem('token');
                 const res = await fetch(`${apiUrl}/${editingId}`, {
                     method: 'PUT',
                     body: putForm,
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
 
                 if (!res.ok) {
@@ -249,11 +255,15 @@ export const Dashboard = () => {
     const handleDelete = async (id) => {
         if (!confirm('Delete this product? This action cannot be undone.')) return;
         try {
-            const res = await fetch(`${API_BASE}/api/products/${id}`, { method: 'DELETE' });
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/products/${id}`, {
+                method: 'DELETE',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (!res.ok) {
                 const text = await res.text();
                 console.warn('Delete failed:', text);
-                setStatus('Delete failed.');
+                setStatus(`Delete failed (${res.status}).`);
                 return;
             }
 
@@ -331,11 +341,26 @@ export const Dashboard = () => {
             }
 
             const list = (Array.isArray(data) ? data : data?.products) || [];
-            // normalize to {id, ...}
-            const normalised = list.map((p) => ({
-                ...p,
-                id: String(p.id ?? p._id ?? ''),
-            })).filter((p) => p.id);
+
+            // Only show products owned by the currently logged-in seller in the dashboard.
+            const currentUserId = (() => {
+                try {
+                    const raw = localStorage.getItem('user');
+                    const parsed = raw ? JSON.parse(raw) : null;
+                    return parsed?.id ? String(parsed.id) : '';
+                } catch {
+                    return '';
+                }
+            })();
+
+            // normalize to {id, ...} and filter to owner's products only
+            const normalised = list
+                .map((p) => ({
+                    ...p,
+                    id: String(p.id ?? p._id ?? ''),
+                    owner: p.owner ? String(p.owner) : '',
+                }))
+                .filter((p) => p.id && (!currentUserId || p.owner === currentUserId));
 
             setPersistedProducts(normalised);
         } catch {

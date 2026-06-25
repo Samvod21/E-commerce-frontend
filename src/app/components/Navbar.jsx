@@ -9,6 +9,19 @@ export const Navbar = () => {
   const cartCount = getCartCount();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Determine the current user's role from localStorage so we can show/hide
+  // the seller-only Dashboard link.
+  const userRole = (() => {
+    try {
+      const raw = localStorage.getItem('user');
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.role || '';
+    } catch {
+      return '';
+    }
+  })();
+  const isSeller = isAuthenticated && userRole === 'seller';
+
   const handleLogout = () => {
     logout();
     setIsOpen(false);
@@ -56,12 +69,14 @@ export const Navbar = () => {
               ) : null;
             })()}
 
-            <Link
-              to="/dashboard"
-              className={navLinkClass}
-            >
-              <span>Dashboard</span>
-            </Link>
+            {isSeller && (
+              <Link
+                to="/dashboard"
+                className={navLinkClass}
+              >
+                <span>Dashboard</span>
+              </Link>
+            )}
 
             <Link
               to="/orders"
@@ -108,9 +123,11 @@ export const Navbar = () => {
         {isOpen && (
           <div className="border-t border-gray-100 py-3 md:hidden">
             <div className="flex flex-col gap-1">
-              <Link to="/dashboard" onClick={closeMenu} className={navLinkClass}>
-                <span>Dashboard</span>
-              </Link>
+              {isSeller && (
+                <Link to="/dashboard" onClick={closeMenu} className={navLinkClass}>
+                  <span>Dashboard</span>
+                </Link>
+              )}
               <Link to="/orders" onClick={closeMenu} className={navLinkClass}>
                 <History className="h-5 w-5" />
                 <span>Orders</span>
