@@ -292,7 +292,29 @@ export const Dashboard = () => {
                 return;
             }
 
-            const res = await fetch(`${API_BASE}/api/orders`, {
+            // Identify the current user so we can flag which line items belong to them
+            // and send the seller-scoped orders query.
+            const currentUserId = (() => {
+                try {
+                    const raw = localStorage.getItem('user');
+                    const parsed = raw ? JSON.parse(raw) : null;
+                    return parsed?.id ? String(parsed.id) : '';
+                } catch {
+                    return '';
+                }
+            })();
+            const currentRole = (() => {
+                try {
+                    const raw = localStorage.getItem('user');
+                    const parsed = raw ? JSON.parse(raw) : null;
+                    return parsed?.role || '';
+                } catch {
+                    return '';
+                }
+            })();
+
+            const scopeParam = currentRole === 'seller' ? '?scope=seller' : '';
+            const res = await fetch(`${API_BASE}/api/orders${scopeParam}`, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
@@ -310,12 +332,19 @@ export const Dashboard = () => {
                 date: o.createdAt ?? o.orderDate ?? o.date,
                 total: o.total,
                 delivered: o.status === 'delivered',
+                customerInfo: o.customerInfo,
                 items: (o.items || []).map((it) => ({
                     id: it.product ?? it._id,
+                    seller: it.seller ? String(it.seller) : '',
                     name: it.name,
                     price: it.price,
                     quantity: it.quantity,
-                    image: it.image
+                    image: it.image,
+                    // Mark whether this line item belongs to the currently
+                    // logged-in seller (only meaningful when current user is a seller).
+                    ownedByMe: currentRole === 'seller' && currentUserId
+                        ? String(it.seller || '') === currentUserId
+                        : false,
                 })),
                 status: o.status
             }));
@@ -324,6 +353,33 @@ export const Dashboard = () => {
             setOrders(normalised);
         } catch {
             setOrders([]);
+        }
+    };
+
+    const handleStatusUpdate = async (orderId, newStatus) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                console.warn('Status update failed:', res.status, text);
+                setStatus(`Status update failed (${res.status}).`);
+                return;
+            }
+
+            setStatus(`Order marked as ${newStatus}.`);
+            await fetchOrdersFromBackend();
+        } catch (e) {
+            console.warn('Status update error:', e);
+            setStatus('Status update failed.');
         }
     };
 
@@ -609,19 +665,44 @@ export const Dashboard = () => {
                                                     <div className="text-sm text-gray-500">{new Date(order.date).toLocaleString()}</div>
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    <span className={`px-2 py-1 rounded ${order.delivered ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'}`}>{order.delivered ? 'Delivered' : 'Pending'}</span>
-                                                    <span className={`px-2 py-1 rounded ${order.delivered ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                        {order.delivered ? 'Delivered' : 'Pending'}
+                                                    <span className={`px-2 py-1 rounded ${order.status === 'delivered' ? 'bg-green-100 text-green-700' : order.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                        {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending'}
                                                     </span>
+                                                    <select
+                                                        value={order.status || 'pending'}
+                                                        onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                                                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    >
+                                                        <option value="pending">Pending</option>
+                                                        <option value="processing">Processing</option>
+                                                        <option value="shipped">Shipped</option>
+                                                        <option value="delivered">Delivered</option>
+                                                        <option value="cancelled">Cancelled</option>
+                                                    </select>
                                                 </div>
                                             </div>
+
+                                            {order.customerInfo && (
+                                                <div className="mt-3 rounded-md bg-gray-50 p-3 text-sm text-gray-700">
+                                                    <div className="font-medium text-gray-900">Shipping to</div>
+                                                    <div>{order.customerInfo.name} · {order.customerInfo.email}</div>
+                                                    <div className="wrap-break-word">{order.customerInfo.address}</div>
+                                                </div>
+                                            )}
 
                                             <div className="mt-3 border-t pt-3">
                                                 {order.items && order.items.map(item => (
                                                     <div key={item.id || item.name} className="flex items-center gap-3 py-2">
                                                         <img src={item.image} alt={item.name} className="h-12 w-12 shrink-0 rounded-md object-cover" />
-                                                        <div className="min-w-0">
-                                                            <div className="truncate font-medium">{item.name}</div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="truncate font-medium">
+                                                                {item.name}
+                                                                {item.ownedByMe && (
+                                                                    <span className="ml-2 inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                                                        Yours
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <div className="text-sm text-gray-500">Qty: {item.quantity || 1} - ${item.price}</div>
                                                         </div>
                                                     </div>
