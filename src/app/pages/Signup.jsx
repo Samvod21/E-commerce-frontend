@@ -35,6 +35,11 @@ const FloatingLabel = ({ type, label, className = '', name, autoComplete = 'off'
 const Signup = () => {
   const [role, setRole] = useState('buyer');
   const [companyName, setCompanyName] = useState('');
+  // Payout account details — only required/collected for sellers, so they
+  // have somewhere for their earnings to be paid out to.
+  const [bankName, setBankName] = useState('');
+  const [accountHolder, setAccountHolder] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -63,6 +68,12 @@ const Signup = () => {
       return;
     }
 
+    if (role === 'seller' && (!bankName.trim() || !accountHolder.trim() || !accountNumber.trim())) {
+      setError('Payout account details (bank name, account holder, account number) are required for seller accounts');
+      setLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
@@ -83,6 +94,13 @@ const Signup = () => {
           password,
           confirmPassword,
           companyName: role === 'seller' ? companyName.trim() : undefined,
+          payoutInfo: role === 'seller'
+            ? {
+                bankName: bankName.trim(),
+                accountHolder: accountHolder.trim(),
+                accountNumber: accountNumber.trim(),
+              }
+            : undefined,
         }),
       });
 
@@ -176,14 +194,47 @@ const Signup = () => {
           </div>
 
           {role === 'seller' && (
-            <FloatingLabel
-              type="text"
-              label="Company Name"
-              name="companyName"
-              autoComplete="organization"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-            />
+            <>
+              <FloatingLabel
+                type="text"
+                label="Company Name"
+                name="companyName"
+                autoComplete="organization"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+
+              {/* Payout account — this is where the seller's earnings will be
+                  recorded as payable to. See Dashboard.jsx for where this is
+                  shown back to the seller (masked, last 4 digits only). */}
+              <FloatingLabel
+                type="text"
+                label="Bank Name"
+                name="bankName"
+                autoComplete="off"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+              />
+              <FloatingLabel
+                type="text"
+                label="Account Holder Name"
+                name="accountHolder"
+                autoComplete="off"
+                value={accountHolder}
+                onChange={(e) => setAccountHolder(e.target.value)}
+              />
+              <FloatingLabel
+                type="text"
+                label="Bank Account Number"
+                name="accountNumber"
+                autoComplete="off"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+              />
+              <p className="-mt-1 text-xs text-gray-400">
+                This is a demo platform — please don't enter a real bank account number. Only the last 4 digits are stored.
+              </p>
+            </>
           )}
 
           <FloatingLabel

@@ -25,6 +25,9 @@ export const ProductDetails = () => {
   const [added, setAdded] = useState(false);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Which size is currently selected. product.sizes is now an array of
+  // { size, price } pairs, so the price shown/added to cart depends on this.
+  const [selectedSize, setSelectedSize] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,9 +60,21 @@ export const ProductDetails = () => {
     };
   }, [id]);
 
+  // Default to the first available size whenever a (new) product loads.
+  useEffect(() => {
+    if (product?.sizes?.length) {
+      setSelectedSize(product.sizes[0].size);
+    } else {
+      setSelectedSize(null);
+    }
+  }, [product]);
+
+  const selectedSizeEntry = product?.sizes?.find((s) => s.size === selectedSize);
+  const displayPrice = selectedSizeEntry ? selectedSizeEntry.price : product?.price;
+
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product);
+    addToCart(product, selectedSize, displayPrice);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -117,9 +132,32 @@ export const ProductDetails = () => {
             </span>
             <h1 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">{product.name}</h1>
             <p className="mb-4 text-3xl font-bold text-blue-600 sm:text-4xl">
-              ${product.price.toFixed(2)}
+              ${displayPrice?.toFixed(2)}
             </p>
           </div>
+
+          {/* Size picker — only shown when the seller configured more than one size.
+              Each size can have its own price, so selecting a size updates displayPrice above. */}
+          {product.sizes && product.sizes.length > 1 && (
+            <div className="mb-6">
+              <span className="mb-2 block font-semibold text-gray-700">Size</span>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((s) => (
+                  <button
+                    key={s.size}
+                    type="button"
+                    onClick={() => setSelectedSize(s.size)}
+                    className={`rounded-lg border px-4 py-2 text-sm transition-colors ${selectedSize === s.size
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 text-gray-700 hover:border-blue-300'
+                      }`}
+                  >
+                    {s.size} · ${s.price.toFixed(2)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mb-6">
             <div className="flex flex-wrap items-center gap-2">
@@ -144,13 +182,13 @@ export const ProductDetails = () => {
 
           <div className="mb-6 rounded-lg bg-gray-50 p-4">
             <h3 className="mb-2 font-semibold text-gray-900">Product Features</h3>
-            <ul className="space-y-1 break-words text-gray-700">
+            <ul className="space-y-1 wrap-break-word text-gray-700">
               <li>Product ID: #{product.id}</li>
               <li>Category: {product.category}</li>
-              <li>Price: ${product.price.toFixed(2)}</li>
+              <li>Price: ${displayPrice?.toFixed(2)}{selectedSize ? ` (${selectedSize})` : ''}</li>
               <li>Available Stock: {product.stock} units</li>
               {product.sizes && product.sizes.length > 0 && (
-                <li>Sizes: {product.sizes.join(', ')}</li>
+                <li>Sizes: {product.sizes.map((s) => `${s.size} ($${s.price.toFixed(2)})`).join(', ')}</li>
               )}
             </ul>
           </div>

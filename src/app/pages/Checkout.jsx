@@ -183,9 +183,15 @@ export const Checkout = () => {
             <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
             <div className="space-y-4 mb-6">
               {cart.map(item => (
-                <div key={item.id} className="flex items-start gap-3 sm:items-center sm:gap-4">
+                <div key={`${item.id}-${item.size || 'Standard'}`} className="flex items-start gap-3 sm:items-center sm:gap-4">
                   <img src={item.image} alt={item.name} className="h-16 w-16 shrink-0 rounded object-cover" />
-                  <div className="min-w-0 flex-1"><h3 className="truncate font-semibold text-gray-900">{item.name}</h3><p className="text-sm text-gray-600">Quantity: {item.quantity}</p></div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-semibold text-gray-900">{item.name}</h3>
+                    <p className="text-sm text-gray-600">
+                      Quantity: {item.quantity}
+                      {item.size && item.size !== 'Standard' ? ` · Size: ${item.size}` : ''}
+                    </p>
+                  </div>
                   <p className="shrink-0 font-semibold text-gray-900">${(item.price*item.quantity).toFixed(2)}</p>
                 </div>
               ))}

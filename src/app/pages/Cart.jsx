@@ -32,7 +32,7 @@ export const Cart = () => {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {cart.map(item => (
-              <div key={item.id} className="border-b last:border-b-0">
+              <div key={`${item.id}-${item.size || 'Standard'}`} className="border-b last:border-b-0">
                 <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
                   {/* Product Image */}
                   <img
@@ -50,6 +50,9 @@ export const Cart = () => {
                       {item.name}
                     </Link>
                     <p className="text-sm text-gray-600">{item.category}</p>
+                    {item.size && item.size !== 'Standard' && (
+                      <p className="text-sm text-gray-500">Size: {item.size}</p>
+                    )}
                     <p className="text-lg font-bold text-blue-600 mt-1">
                       ${item.price.toFixed(2)}
                     </p>
@@ -60,14 +63,14 @@ export const Cart = () => {
                     <span className="text-sm font-medium text-gray-600 sm:hidden">Quantity</span>
                     <div className="flex items-center gap-2">
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.id, item.quantity - 1, item.size)}
                       className="p-1 rounded bg-gray-200 hover:bg-gray-300"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
                     <span className="w-12 text-center font-semibold">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.id, item.quantity + 1, item.size)}
                       disabled={item.quantity >= item.stock}
                       className="p-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -85,7 +88,7 @@ export const Cart = () => {
 
                   {/* Remove Button */}
                   <button
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => removeFromCart(item.id, item.size)}
                     className="inline-flex items-center justify-center gap-2 rounded border border-red-100 px-3 py-2 text-red-600 transition-colors hover:bg-red-50 sm:border-0 sm:p-2"
                   >
                     <Trash2 className="h-5 w-5" />

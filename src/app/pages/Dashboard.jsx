@@ -21,10 +21,24 @@ const initialState = {
     imageFile: null
 };
 
+// Reads the logged-in user (including masked payoutInfo, for sellers) from
+// localStorage — same shape that Signup/Login store after auth.
+const getCurrentUser = () => {
+    try {
+        const raw = localStorage.getItem('user');
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+};
+
 export const Dashboard = () => {
     const [formData, setFormData] = useState(initialState);
+    // `sizes` now holds { size, price } objects instead of plain strings, so
+    // each size the seller adds can have its own price.
     const [sizes, setSizes] = useState([]);
     const [sizeInput, setSizeInput] = useState('');
+    const [sizePriceInput, setSizePriceInput] = useState('');
     const [imagePreview, setImagePreview] = useState('');
     const [errors, setErrors] = useState({});
     const [status, setStatus] = useState('');
@@ -67,16 +81,25 @@ export const Dashboard = () => {
 
     const handleAddSize = () => {
         const value = sizeInput.trim();
-        if (!value) {
-            return;
-        }
-        if (sizes.includes(value)) {
-            setSizeInput('');
+        const priceValue = Number(sizePriceInput);
+
+        // A size needs a name AND a valid price greater than 0 — this is what
+        // lets the buyer pick a size and pay the right amount for it.
+        if (!value || !sizePriceInput || Number.isNaN(priceValue) || priceValue <= 0) {
+            setErrors((prev) => ({ ...prev, sizeInput: 'Enter a size and a valid price greater than 0' }));
             return;
         }
 
-        setSizes((prev) => [...prev, value]);
+        if (sizes.some((s) => s.size === value)) {
+            setSizeInput('');
+            setSizePriceInput('');
+            return;
+        }
+
+        setSizes((prev) => [...prev, { size: value, price: priceValue }]);
         setSizeInput('');
+        setSizePriceInput('');
+        setErrors((prev) => ({ ...prev, sizeInput: '' }));
     };
 
     const handleSizeKeyDown = (e) => {
@@ -87,7 +110,7 @@ export const Dashboard = () => {
     };
 
     const removeSize = (sizeToRemove) => {
-        setSizes((prev) => prev.filter((size) => size !== sizeToRemove));
+        setSizes((prev) => prev.filter((s) => s.size !== sizeToRemove));
     };
 
     const validate = () => {
@@ -97,8 +120,15 @@ export const Dashboard = () => {
             nextErrors.name = 'Product name is required';
         }
 
-        if (!formData.price.trim() || Number.isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-            nextErrors.price = 'A valid price is required';
+        // If the seller hasn't added any custom sizes, the top-level Price
+        // field is what's used (as an implicit "Standard" size). If they have
+        // added sizes, each one needs its own valid price instead.
+        if (sizes.length === 0) {
+            if (!formData.price.trim() || Number.isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
+                nextErrors.price = 'A valid price is required';
+            }
+        } else if (sizes.some((s) => Number.isNaN(Number(s.price)) || Number(s.price) <= 0)) {
+            nextErrors.sizeInput = 'Every size needs a valid price greater than 0';
         }
 
         if (!formData.category.trim()) {
@@ -121,16 +151,24 @@ export const Dashboard = () => {
         return Object.keys(nextErrors).length === 0;
     };
 
-    const buildProduct = () => ({
-        id: Date.now(),
-        name: formData.name.trim(),
-        price: Number(formData.price),
-        category: formData.category.trim(),
-        description: formData.description.trim(),
-        stock: Number(formData.stock),
-        sizes: sizes.length ? sizes : ['Standard'],
-        image: imagePreview
-    });
+    const buildProduct = () => {
+        // sizesPayload is always an array of { size, price } objects — if the
+        // seller didn't add any custom sizes, we fall back to a single
+        // "Standard" size using the top-level Price field.
+        const sizesPayload = sizes.length ? sizes : [{ size: 'Standard', price: Number(formData.price) }];
+        return {
+            id: Date.now(),
+            // The top-level price is always the cheapest size, so listings can
+            // show a single "from $X" figure and sorting/filtering keeps working.
+            price: Math.min(...sizesPayload.map((s) => s.price)),
+            name: formData.name.trim(),
+            category: formData.category.trim(),
+            description: formData.description.trim(),
+            stock: Number(formData.stock),
+            sizes: sizesPayload,
+            image: imagePreview
+        };
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -149,7 +187,9 @@ export const Dashboard = () => {
         formDataToSend.append('category', product.category);
         formDataToSend.append('description', product.description);
         formDataToSend.append('stock', product.stock.toString());
-        product.sizes.forEach((size) => formDataToSend.append('sizes[]', size));
+        // Sizes now carry per-size prices, so they're sent as one JSON field
+        // rather than several 'sizes[]' string entries.
+        formDataToSend.append('sizes', JSON.stringify(product.sizes));
         if (formData.imageFile) {
             formDataToSend.append('image', formData.imageFile);
         }
@@ -192,7 +232,10 @@ export const Dashboard = () => {
                 putForm.append('description', productToStore.description);
                 putForm.append('stock', productToStore.stock.toString());
 
-                (productToStore.sizes || ['Standard']).forEach((size) => putForm.append('sizes[]', size));
+                const sizesForUpdate = productToStore.sizes && productToStore.sizes.length
+                    ? productToStore.sizes
+                    : [{ size: 'Standard', price: productToStore.price }];
+                putForm.append('sizes', JSON.stringify(sizesForUpdate));
                 if (formData.imageFile) {
                     putForm.append('image', formData.imageFile);
                 }
@@ -231,6 +274,7 @@ export const Dashboard = () => {
         setFormData(initialState);
         setSizes([]);
         setSizeInput('');
+        setSizePriceInput('');
         setImagePreview('');
         setErrors({});
         setSaving(false);
@@ -238,15 +282,21 @@ export const Dashboard = () => {
 
     const startEdit = (product) => {
         setEditingId(product.id);
+        // If the product only has the implicit single "Standard" size, treat
+        // it as "no custom sizes" so the top-level Price field is used again
+        // (matching how a product with no sizes is created).
+        const isStandardOnly = product.sizes?.length === 1 && product.sizes[0].size === 'Standard';
         setFormData({
             name: product.name || '',
-            price: product.price ? String(product.price) : '',
+            price: isStandardOnly
+                ? String(product.sizes[0].price)
+                : (product.price ? String(product.price) : ''),
             category: product.category || '',
             description: product.description || '',
             stock: product.stock ? String(product.stock) : '',
             imageFile: null
         });
-        setSizes(product.sizes || []);
+        setSizes(isStandardOnly ? [] : (product.sizes || []).map((s) => ({ size: s.size, price: s.price })));
         setImagePreview(product.image || '');
         setActiveTab('create');
         setStatus('Editing product. Make changes and click Save.');
@@ -275,6 +325,7 @@ export const Dashboard = () => {
                 setFormData(initialState);
                 setSizes([]);
                 setSizeInput('');
+                setSizePriceInput('');
                 setImagePreview('');
                 setErrors({});
             }
@@ -436,6 +487,17 @@ export const Dashboard = () => {
         // Keeping this as a no-op to avoid confusing empty dashboard after the storage refactor.
     };
 
+    // Payout account + a simple earnings ledger for the seller. There's no
+    // real payment processor wired up (see orderController.js — payment is
+    // simulated), so this doesn't move any money; it just tracks what the
+    // seller is owed across their orders, the same way the rest of this app
+    // simulates payment info without actually charging a card.
+    const currentUser = getCurrentUser();
+    const sellerEarnings = orders.reduce((sum, order) => {
+        const mine = (order.items || []).filter((it) => it.ownedByMe);
+        return sum + mine.reduce((s, it) => s + (it.price || 0) * (it.quantity || 1), 0);
+    }, 0);
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
             <div className="mb-6 text-center sm:mb-8">
@@ -548,7 +610,11 @@ export const Dashboard = () => {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="sizeInput" className="block text-sm font-medium text-gray-700 mb-2">Sizes</label>
+                                    <label htmlFor="sizeInput" className="block text-sm font-medium text-gray-700 mb-2">Sizes &amp; Prices</label>
+                                    <p className="mb-2 text-xs text-gray-500">
+                                        If this product comes in more than one size, add each size with its own price below —
+                                        the buyer will pick a size and pay that size's price. Leave this empty to use the single Price field above.
+                                    </p>
                                     <div className="flex flex-col gap-3 sm:flex-row">
                                         <input
                                             id="sizeInput"
@@ -557,7 +623,16 @@ export const Dashboard = () => {
                                             onKeyDown={handleSizeKeyDown}
                                             onChange={(e) => setSizeInput(e.target.value)}
                                             className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                                            placeholder="Add a size like M, L, 500ml"
+                                            placeholder="Size, e.g. M, L, 500ml"
+                                        />
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={sizePriceInput}
+                                            onKeyDown={handleSizeKeyDown}
+                                            onChange={(e) => setSizePriceInput(e.target.value)}
+                                            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 sm:w-44"
+                                            placeholder="Price for this size"
                                         />
                                         <button
                                             type="button"
@@ -567,12 +642,13 @@ export const Dashboard = () => {
                                             Add Size
                                         </button>
                                     </div>
+                                    {errors.sizeInput && <p className="mt-1 text-sm text-red-600">{errors.sizeInput}</p>}
                                     {sizes.length > 0 && (
                                         <div className="mt-3 flex flex-wrap gap-2">
-                                            {sizes.map((size) => (
-                                                <span key={size} className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">
-                                                    {size}
-                                                    <button type="button" onClick={() => removeSize(size)} className="rounded-full p-1 text-blue-600 hover:bg-blue-200">
+                                            {sizes.map((s) => (
+                                                <span key={s.size} className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">
+                                                    {s.size} — ${Number(s.price).toFixed(2)}
+                                                    <button type="button" onClick={() => removeSize(s.size)} className="rounded-full p-1 text-blue-600 hover:bg-blue-200">
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </button>
                                                 </span>
@@ -652,6 +728,22 @@ export const Dashboard = () => {
 
                     {activeTab === 'orders' && (
                         <div>
+                            {currentUser?.payoutInfo && (
+                                <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                                    <h3 className="text-sm font-semibold text-gray-900">Payout Account</h3>
+                                    <p className="mt-1 text-sm text-gray-700">
+                                        {currentUser.payoutInfo.bankName} •••• {currentUser.payoutInfo.last4}
+                                    </p>
+                                    <p className="text-sm text-gray-500">{currentUser.payoutInfo.accountHolder}</p>
+                                    <div className="mt-3 border-t border-blue-100 pt-3">
+                                        <p className="text-xs text-gray-500">Total earnings across your orders</p>
+                                        <p className="text-2xl font-bold text-blue-600">${sellerEarnings.toFixed(2)}</p>
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-400">
+                                        Demo platform — earnings are tracked here but not actually transferred to this account.
+                                    </p>
+                                </div>
+                            )}
                             <h2 className="text-lg font-semibold mb-4">Orders</h2>
                             {orders.length === 0 ? (
                                 <p className="text-sm text-gray-500">No orders yet.</p>
@@ -740,7 +832,11 @@ export const Dashboard = () => {
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-500">Price</p>
-                                        <p className="text-gray-900">{formData.price ? `$${Number(formData.price).toFixed(2)}` : '$0.00'}</p>
+                                        <p className="text-gray-900">
+                                            {sizes.length > 0
+                                                ? `From $${Math.min(...sizes.map((s) => Number(s.price) || 0)).toFixed(2)}`
+                                                : (formData.price ? `$${Number(formData.price).toFixed(2)}` : '$0.00')}
+                                        </p>
                                     </div>
                                 </div>
                                 <div>
@@ -750,9 +846,9 @@ export const Dashboard = () => {
                                 <div>
                                     <p className="text-sm text-gray-500">Sizes</p>
                                     <div className="mt-2 flex flex-wrap gap-2">
-                                        {sizes.length > 0 ? sizes.map((size) => (
-                                            <span key={size} className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">
-                                                {size}
+                                        {sizes.length > 0 ? sizes.map((s) => (
+                                            <span key={s.size} className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">
+                                                {s.size} — ${Number(s.price).toFixed(2)}
                                             </span>
                                         )) : (
                                             <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-500">Standard</span>

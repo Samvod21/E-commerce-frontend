@@ -5,9 +5,17 @@ import { useCart } from '../context/CartContext';
 export const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
 
+  // Products can now have multiple sizes, each with its own price. A single
+  // "Add to Cart" click on the card can't know which size/price the buyer
+  // wants, so for those products we let the click fall through to the
+  // surrounding <Link> and send the buyer to the product page to choose.
+  const hasMultipleSizes = Array.isArray(product.sizes) && product.sizes.length > 1;
+
   const handleAddToCart = (e) => {
+    if (hasMultipleSizes) return;
     e.preventDefault();
-    addToCart(product);
+    const only = product.sizes?.[0];
+    addToCart(product, only?.size || 'Standard', only?.price ?? product.price);
   };
 
   return (
@@ -30,7 +38,7 @@ export const ProductCard = ({ product }) => {
 
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <span className="text-xl font-bold text-blue-600 sm:text-2xl">
-              ${product.price.toFixed(2)}
+              {hasMultipleSizes ? `From $${product.price.toFixed(2)}` : `$${product.price.toFixed(2)}`}
             </span>
             <span className={`rounded px-2 py-1 text-xs sm:text-sm ${product.stock > 10
                 ? 'bg-green-100 text-green-800'
@@ -48,7 +56,7 @@ export const ProductCard = ({ product }) => {
             className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             <ShoppingCart className="h-4 w-4" />
-            <span>{product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
+            <span>{product.stock === 0 ? 'Out of Stock' : hasMultipleSizes ? 'Select Size' : 'Add to Cart'}</span>
           </button>
         </div>
       </div>

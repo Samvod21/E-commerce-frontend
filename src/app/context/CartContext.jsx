@@ -70,17 +70,27 @@ export const CartProvider = ({ children }) => {
 
   // ─── Add to cart ─────────────────────────────────────────────────────────────
 
+  // NOTE: `size` and `unitPrice` are new params. When a product has multiple
+  // sizes, each size can have its own price, so the caller (ProductDetails /
+  // ProductCard) tells us which size was selected and what that size's price
+  // is. We key cart matching on id+size so the same product in two different
+  // sizes shows as two separate lines with two separate prices.
   const addToCart = useCallback(
-    async (product) => {
+    async (product, size, unitPrice) => {
+      const resolvedSize = size || 'Standard';
+      const resolvedPrice = typeof unitPrice === 'number' ? unitPrice : product.price;
+
       // Optimistically update local state first so the UI feels instant
       setCart((prev) => {
-        const existing = prev.find((i) => i.id === product.id);
+        const existing = prev.find((i) => i.id === product.id && i.size === resolvedSize);
         if (existing) {
           return prev.map((i) =>
-            i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+            i.id === product.id && i.size === resolvedSize
+              ? { ...i, quantity: i.quantity + 1 }
+              : i
           );
         }
-        return [...prev, { ...product, quantity: 1 }];
+        return [...prev, { ...product, price: resolvedPrice, size: resolvedSize, quantity: 1 }];
       });
 
       // Then persist to the server if authenticated
@@ -91,11 +101,17 @@ export const CartProvider = ({ children }) => {
         const res = await fetch(`${API_BASE}/api/cart/add`, {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ productId: product.id || product._id, quantity: 1 }),
+          body: JSON.stringify({
+            productId: product.id || product._id,
+            quantity: 1,
+            size: resolvedSize,
+          }),
         });
         const data = await res.json();
         if (data.success && data.cart?.items) {
-          // Keep server as source of truth after the call
+          // Keep server as source of truth after the call. The backend looks
+          // up the correct price for `size` itself, so this also protects
+          // against a stale/tampered price coming from the client.
           setCart(data.cart.items.map(normaliseServerItem));
         }
       } catch (err) {
@@ -107,14 +123,14 @@ export const CartProvider = ({ children }) => {
 
   // ─── Remove from cart ────────────────────────────────────────────────────────
 
-  const removeFromCart = useCallback(async (productId) => {
-    setCart((prev) => prev.filter((i) => i.id !== productId));
+  const removeFromCart = useCallback(async (productId, size = 'Standard') => {
+    setCart((prev) => prev.filter((i) => !(i.id === productId && i.size === size)));
 
     const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
-      await fetch(`${API_BASE}/api/cart/remove/${productId}`, {
+      await fetch(`${API_BASE}/api/cart/remove/${productId}?size=${encodeURIComponent(size)}`, {
         method: 'DELETE',
         headers: authHeaders(),
       });
@@ -125,14 +141,16 @@ export const CartProvider = ({ children }) => {
 
   // ─── Update quantity ─────────────────────────────────────────────────────────
 
-  const updateQuantity = useCallback(async (productId, newQuantity) => {
+  const updateQuantity = useCallback(async (productId, newQuantity, size = 'Standard') => {
     if (newQuantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, size);
       return;
     }
 
     setCart((prev) =>
-      prev.map((i) => (i.id === productId ? { ...i, quantity: newQuantity } : i))
+      prev.map((i) =>
+        i.id === productId && i.size === size ? { ...i, quantity: newQuantity } : i
+      )
     );
 
     const token = localStorage.getItem('token');
@@ -142,7 +160,7 @@ export const CartProvider = ({ children }) => {
       await fetch(`${API_BASE}/api/cart/update/${productId}`, {
         method: 'PUT',
         headers: authHeaders(),
-        body: JSON.stringify({ quantity: newQuantity }),
+        body: JSON.stringify({ quantity: newQuantity, size }),
       });
     } catch (err) {
       console.warn('Could not update cart quantity on server:', err);
