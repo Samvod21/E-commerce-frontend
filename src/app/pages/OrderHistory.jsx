@@ -3,18 +3,18 @@ import { Link } from 'react-router';
 import { Package, Calendar, DollarSign, Loader2, CreditCard } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace('/api/products','') : 'http://localhost:5000';
+  ? import.meta.env.VITE_API_URL.replace('/api/products', '') : 'http://localhost:5000';
 
 const STATUS_STYLES = {
-  pending:    'bg-yellow-100 text-yellow-800 border-yellow-200',
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   processing: 'bg-blue-100   text-blue-800   border-blue-200',
-  shipped:    'bg-purple-100 text-purple-800 border-purple-200',
-  delivered:  'bg-green-100  text-green-800  border-green-200',
-  cancelled:  'bg-red-100    text-red-800    border-red-200'
+  shipped: 'bg-purple-100 text-purple-800 border-purple-200',
+  delivered: 'bg-green-100  text-green-800  border-green-200',
+  cancelled: 'bg-red-100    text-red-800    border-red-200'
 };
 const STATUS_LABELS = {
-  pending:'⏳ Pending', processing:'⚙️ Processing',
-  shipped:'🚚 Shipped', delivered:'✅ Delivered', cancelled:'❌ Cancelled'
+  pending: '⏳ Pending', processing: '⚙️ Processing',
+  shipped: '🚚 Shipped', delivered: '✅ Delivered', cancelled: '❌ Cancelled'
 };
 
 function StatusBadge({ status }) {
@@ -35,20 +35,20 @@ export const OrderHistory = () => {
         const token = localStorage.getItem('token');
         if (!token) { setOrders([]); return; }
         const res = await fetch(`${API_BASE}/api/orders`, {
-          headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` }
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
         if (res.ok && data.success) {
           const normalised = (data.orders || []).map(o => ({
-            id:          o._id ?? o.id,
-            date:        o.createdAt ?? o.date,
-            total:       o.total,
-            status:      o.status ?? 'pending',   // ← real status, not just boolean
-            items:       (o.items || []).map(it => ({ id:it.product??it._id, name:it.name, price:it.price, quantity:it.quantity, image:it.image })),
+            id: o._id ?? o.id,
+            date: o.createdAt ?? o.date,
+            total: o.total,
+            status: o.status ?? 'pending',   // ← real status, not just boolean
+            items: (o.items || []).map(it => ({ id: it.product ?? it._id, name: it.name, price: it.price, quantity: it.quantity, image: it.image })),
             customerInfo: o.customerInfo,
-            paymentInfo:  o.paymentInfo           // undefined on old orders → won't render
+            paymentInfo: o.paymentInfo           // undefined on old orders → won't render
           }));
-          normalised.sort((a,b) => new Date(b.date)-new Date(a.date));
+          normalised.sort((a, b) => new Date(b.date) - new Date(a.date));
           setOrders(normalised);
         } else setOrders([]);
       } catch { setOrders([]); }
@@ -58,11 +58,11 @@ export const OrderHistory = () => {
   }, []);
 
   const hasOrders = useMemo(() => orders.length > 0, [orders]);
-  const fmt = d => new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const fmt = d => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   if (loading) return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <div className="flex min-h-[40vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600"/></div>
+      <div className="flex min-h-[40vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>
     </div>
   );
 
@@ -70,7 +70,7 @@ export const OrderHistory = () => {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <h1 className="mb-6 text-3xl font-bold text-gray-900 sm:mb-8">Order History</h1>
       <div className="rounded-lg bg-white py-12 text-center shadow-md">
-        <Package className="mx-auto mb-4 h-20 w-20 text-gray-300 sm:h-24 sm:w-24"/>
+        <Package className="mx-auto mb-4 h-20 w-20 text-gray-300 sm:h-24 sm:w-24" />
         <h2 className="mb-2 text-2xl font-bold text-gray-900">No orders yet</h2>
         <p className="mb-6 text-gray-600">Start shopping to see your order history!</p>
         <Link to="/" className="inline-block rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700">Start Shopping</Link>
@@ -92,9 +92,9 @@ export const OrderHistory = () => {
                 <StatusBadge status={order.status} />
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="flex items-start gap-2"><Calendar className="mt-0.5 h-5 w-5 shrink-0 text-gray-600"/><div><p className="text-sm text-gray-600">Order Date</p><p className="font-semibold text-gray-900">{fmt(order.date)}</p></div></div>
-                <div className="flex items-start gap-2"><DollarSign className="mt-0.5 h-5 w-5 shrink-0 text-gray-600"/><div><p className="text-sm text-gray-600">Total Amount</p><p className="font-semibold text-blue-600">${order.total.toFixed(2)}</p></div></div>
-                <div className="flex items-start gap-2"><Package className="mt-0.5 h-5 w-5 shrink-0 text-gray-600"/><div><p className="text-sm text-gray-600">Items</p><p className="font-semibold text-gray-900">{order.items.length} item{order.items.length!==1?'s':''}</p></div></div>
+                <div className="flex items-start gap-2"><Calendar className="mt-0.5 h-5 w-5 shrink-0 text-gray-600" /><div><p className="text-sm text-gray-600">Order Date</p><p className="font-semibold text-gray-900">{fmt(order.date)}</p></div></div>
+                <div className="flex items-start gap-2"><DollarSign className="mt-0.5 h-5 w-5 shrink-0 text-gray-600" /><div><p className="text-sm text-gray-600">Total Amount</p><p className="font-semibold text-blue-600">${order.total.toFixed(2)}</p></div></div>
+                <div className="flex items-start gap-2"><Package className="mt-0.5 h-5 w-5 shrink-0 text-gray-600" /><div><p className="text-sm text-gray-600">Items</p><p className="font-semibold text-gray-900">{order.items.length} item{order.items.length !== 1 ? 's' : ''}</p></div></div>
               </div>
             </div>
 
@@ -103,13 +103,16 @@ export const OrderHistory = () => {
               <h3 className="mb-4 font-semibold text-gray-900">Items Ordered</h3>
               <div className="space-y-3">
                 {order.items.map(item => (
-                  <div key={item.id} className="flex items-start gap-3 sm:items-center sm:gap-4">
-                    <img src={item.image} alt={item.name} className="h-16 w-16 shrink-0 rounded object-cover"/>
+                  <div key={item.id} className="flex flex-col gap-2 rounded-xl border border-gray-100 bg-white p-3 sm:flex-row sm:items-center sm:gap-4">
+                    <img src={item.image} alt={item.name} className="h-16 w-16 shrink-0 rounded object-cover" />
                     <div className="min-w-0 flex-1">
                       <Link to={`/product/${item.id}`} className="block truncate font-semibold text-gray-900 hover:text-blue-600">{item.name}</Link>
                       <p className="text-sm text-gray-600">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                      <div className="mt-2 inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                        Status: {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pending'}
+                      </div>
                     </div>
-                    <p className="shrink-0 font-semibold text-gray-900">${(item.price*item.quantity).toFixed(2)}</p>
+                    <p className="shrink-0 font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -129,7 +132,7 @@ export const OrderHistory = () => {
                 {order.paymentInfo && (
                   <div>
                     <h3 className="mb-2 font-semibold text-gray-900 flex items-center gap-1">
-                      <CreditCard className="h-4 w-4"/> Payment
+                      <CreditCard className="h-4 w-4" /> Payment
                     </h3>
                     <div className="text-sm text-gray-700 space-y-0.5">
                       <p><span className="font-medium">{order.paymentInfo.cardType}</span> ending in <span className="font-mono font-semibold">••••{order.paymentInfo.last4}</span></p>

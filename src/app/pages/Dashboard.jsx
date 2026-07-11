@@ -391,6 +391,7 @@ export const Dashboard = () => {
                     price: it.price,
                     quantity: it.quantity,
                     image: it.image,
+                    status: o.status,
                     // Mark whether this line item belongs to the currently
                     // logged-in seller (only meaningful when current user is a seller).
                     ownedByMe: currentRole === 'seller' && currentUserId
@@ -784,18 +785,22 @@ export const Dashboard = () => {
 
                                             <div className="mt-3 border-t pt-3">
                                                 {order.items && order.items.map(item => (
-                                                    <div key={item.id || item.name} className="flex items-center gap-3 py-2">
+                                                    <div key={item.id || item.name} className="flex flex-col gap-2 rounded-xl border border-gray-100 bg-white p-3 sm:flex-row sm:items-center sm:gap-3">
                                                         <img src={item.image} alt={item.name} className="h-12 w-12 shrink-0 rounded-md object-cover" />
                                                         <div className="min-w-0 flex-1">
-                                                            <div className="truncate font-medium">
-                                                                {item.name}
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <p className="truncate font-medium text-gray-900">{item.name}</p>
                                                                 {item.ownedByMe && (
-                                                                    <span className="ml-2 inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                                                    <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                                                                         Yours
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div className="text-sm text-gray-500">Qty: {item.quantity || 1} - ${item.price}</div>
+                                                            <div className="mt-1 flex flex-wrap gap-2 text-sm text-gray-500">
+                                                                <span>Qty: {item.quantity || 1}</span>
+                                                                <span>- ${item.price}</span>
+                                                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">Status: {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pending'}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}

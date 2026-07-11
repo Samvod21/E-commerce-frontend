@@ -14,8 +14,46 @@ const authHeaders = () => {
     : { 'Content-Type': 'application/json' };
 };
 
+const getCartStorageKey = () => {
+  if (typeof window === 'undefined') return 'guest-cart';
+  const token = window.localStorage.getItem('token');
+  if (!token) return 'guest-cart';
+
+  try {
+    const storedUser = window.localStorage.getItem('user');
+    if (!storedUser) return 'cart:authenticated';
+    const parsedUser = JSON.parse(storedUser);
+    const userId = parsedUser._id || parsedUser.id;
+    return userId ? `cart:${userId}` : 'cart:authenticated';
+  } catch (err) {
+    console.warn('Could not read user for cart storage:', err);
+    return 'cart:authenticated';
+  }
+};
+
+const readCartFromStorage = (storageKey) => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const savedCart = window.localStorage.getItem(storageKey);
+    return savedCart ? JSON.parse(savedCart) : [];
+  } catch (err) {
+    console.warn('Could not load saved cart:', err);
+    return [];
+  }
+};
+
+const persistCartToStorage = (storageKey, nextCart) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(nextCart));
+  } catch (err) {
+    console.warn('Could not save cart:', err);
+  }
+};
+
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
+  const [storageKey, setStorageKey] = useState(() => getCartStorageKey());
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => !!localStorage.getItem('token')
   );
@@ -44,6 +82,19 @@ export const CartProvider = ({ children }) => {
     quantity: item.quantity,
   });
 
+  useEffect(() => {
+    setStorageKey(getCartStorageKey());
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const nextCart = readCartFromStorage(storageKey);
+    setCart(nextCart);
+  }, [storageKey]);
+
+  useEffect(() => {
+    persistCartToStorage(storageKey, cart);
+  }, [cart, storageKey]);
+
   // ─── Load cart from server (called after login / on mount if authenticated) ─
 
   const syncCartWithServer = useCallback(async () => {
@@ -55,8 +106,38 @@ export const CartProvider = ({ children }) => {
         headers: authHeaders(),
       });
       const data = await res.json();
-      if (data.success && data.cart?.items?.length) {
-        setCart(data.cart.items.map(normaliseServerItem));
+      if (data.success) {
+        if (data.cart?.items?.length) {
+          setCart(data.cart.items.map(normaliseServerItem));
+          return;
+        }
+
+        const guestCart = readCartFromStorage('guest-cart');
+        if (Array.isArray(guestCart) && guestCart.length > 0) {
+          for (const item of guestCart) {
+            await fetch(`${API_BASE}/api/cart/add`, {
+              method: 'POST',
+              headers: authHeaders(),
+              body: JSON.stringify({
+                productId: item.id || item._id,
+                quantity: item.quantity,
+                size: item.size || 'Standard',
+              }),
+            });
+          }
+          window.localStorage.removeItem('guest-cart');
+
+          const refreshedRes = await fetch(`${API_BASE}/api/cart`, {
+            headers: authHeaders(),
+          });
+          const refreshedData = await refreshedRes.json();
+          if (refreshedData.success && refreshedData.cart?.items?.length) {
+            setCart(refreshedData.cart.items.map(normaliseServerItem));
+            return;
+          }
+        }
+
+        setCart([]);
       }
     } catch (err) {
       console.warn('Could not sync cart with server:', err);
@@ -171,13 +252,15 @@ export const CartProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setIsAuthenticated(false);
-    setCart([]);
   }, []);
 
   // ─── Clear cart ──────────────────────────────────────────────────────────────
 
   const clearCart = useCallback(async () => {
     setCart([]);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(storageKey);
+    }
 
     const token = localStorage.getItem('token');
     if (!token) return;
