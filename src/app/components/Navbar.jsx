@@ -65,7 +65,10 @@ export const Navbar = () => {
               const greetingName = [firstName, lastName].filter(Boolean).join(' ');
 
               return greetingName ? (
-                <span className="mr-2 text-sm text-gray-600">Hello, {greetingName}</span>
+                <div className="mr-3 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 shadow-sm">
+                  <span className="mr-2 h-2.5 w-2.5 rounded-full bg-blue-500" />
+                  Hi, {greetingName}
+                </div>
               ) : null;
             })()}
 
