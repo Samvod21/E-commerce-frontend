@@ -7,7 +7,7 @@ export const Cart = () => {
 
   if (cart.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
         <div className="text-center py-12">
           <ShoppingBag className="mx-auto mb-4 h-20 w-20 text-gray-300 sm:h-24 sm:w-24" />
           <h2 className="mb-2 text-2xl font-bold text-gray-900">Your cart is empty</h2>
@@ -24,21 +24,21 @@ export const Cart = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-      <h1 className="mb-5 text-3xl font-bold text-gray-900 sm:mb-8">Shopping Cart</h1>
+    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
+      <h1 className="mb-4 text-2xl font-bold text-gray-900 sm:mb-8 sm:text-3xl">Shopping Cart</h1>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.7fr_0.9fr] lg:gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-hidden rounded-lg bg-white shadow-md">
             {cart.map(item => (
               <div key={`${item.id}-${item.size || 'Standard'}`} className="border-b last:border-b-0">
-                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+                <div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-center sm:p-4">
                   {/* Product Image */}
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="h-40 w-full rounded object-cover sm:h-24 sm:w-24"
+                    className="h-32 w-full rounded object-cover sm:h-24 sm:w-24"
                   />
 
                   {/* Product Details */}
@@ -62,20 +62,20 @@ export const Cart = () => {
                   <div className="flex items-center justify-between gap-3 sm:justify-start">
                     <span className="text-sm font-medium text-gray-600 sm:hidden">Quantity</span>
                     <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1, item.size)}
-                      className="p-1 rounded bg-gray-200 hover:bg-gray-300"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-12 text-center font-semibold">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1, item.size)}
-                      disabled={item.quantity >= item.stock}
-                      className="p-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.size)}
+                        className="p-1 rounded bg-gray-200 hover:bg-gray-300"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-12 text-center font-semibold">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.size)}
+                        disabled={item.quantity >= item.stock}
+                        className="p-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
 

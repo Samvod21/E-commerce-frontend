@@ -83,7 +83,7 @@ export const ProductDetails = () => {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
         <div className="flex min-h-[50vh] items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
         </div>
@@ -93,7 +93,7 @@ export const ProductDetails = () => {
 
   if (productNotFound) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
         <div className="text-center">
           <h2 className="mb-4 text-2xl font-bold text-gray-900">Product Not Found</h2>
           <Link to="/" className="text-blue-600 hover:underline">
@@ -107,17 +107,17 @@ export const ProductDetails = () => {
   if (!product) return null;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       <button
         onClick={() => navigate(-1)}
-        className="mb-5 flex items-center gap-2 text-gray-600 hover:text-gray-900 sm:mb-6"
+        className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 sm:mb-6"
       >
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
       </button>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
-        <div className="overflow-hidden rounded-lg bg-gray-100">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8">
+        <div className="overflow-hidden rounded-xl bg-gray-100 shadow-sm">
           <img
             src={product.image}
             alt={product.name}
@@ -147,7 +147,7 @@ export const ProductDetails = () => {
                     key={s.size}
                     type="button"
                     onClick={() => setSelectedSize(s.size)}
-                    className={`rounded-lg border px-4 py-2 text-sm transition-colors ${selectedSize === s.size
+                    className={`rounded-lg border px-3 py-2 text-sm transition-colors sm:px-4 ${selectedSize === s.size
                       ? 'border-blue-600 bg-blue-50 text-blue-700'
                       : 'border-gray-300 text-gray-700 hover:border-blue-300'
                       }`}
@@ -197,7 +197,7 @@ export const ProductDetails = () => {
             <button
               onClick={handleAddToCart}
               disabled={product.stock === 0}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:text-lg"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:px-6 sm:text-lg"
             >
               {added ? (
                 <>

@@ -126,12 +126,12 @@ export const Home = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-      <h1 className="mb-5 text-3xl font-bold text-gray-900 sm:mb-8 sm:text-4xl">Product Catalog</h1>
+    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
+      <h1 className="mb-4 text-2xl font-bold text-gray-900 sm:mb-8 sm:text-4xl">Product Catalog</h1>
 
       {/* Search and Filter Section */}
-      <div className="mb-6 rounded-lg bg-white p-4 shadow-md sm:mb-8 sm:p-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="mb-6 rounded-lg bg-white p-3 shadow-md sm:mb-8 sm:p-6">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
           {/* Search Box */}
           <div className="relative">
             <form onSubmit={handleSearchSubmit}>
@@ -144,7 +144,7 @@ export const Home = () => {
                   onChange={handleSearchChange}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2"
+                  className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-3 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2 sm:text-base"
                 />
               </div>
             </form>
@@ -173,7 +173,7 @@ export const Home = () => {
             <select
               value={selectedCategory}
               onChange={handleCategoryChange}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 sm:py-2 sm:text-base"
             >
               {categories.map(category => (
                 <option key={category} value={category}>

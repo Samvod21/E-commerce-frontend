@@ -8,14 +8,16 @@ import { Dashboard } from './app/pages/Dashboard';
 import Login from './app/pages/Login';
 import Signup from './app/pages/Signup';
 import { Navbar } from './app/components/Navbar';
+import { Footer } from './app/components/Footer';
 import { RequireSeller } from './app/components/RequireSeller';
 
 
 const Layout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-x-hidden">
       <Navbar />
-      <main>{children}</main>
+      <main className="flex-1 w-full">{children}</main>
+      <Footer />
     </div>
   );
 };

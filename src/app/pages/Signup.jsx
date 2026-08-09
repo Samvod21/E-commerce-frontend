@@ -96,10 +96,10 @@ const Signup = () => {
           companyName: role === 'seller' ? companyName.trim() : undefined,
           payoutInfo: role === 'seller'
             ? {
-                bankName: bankName.trim(),
-                accountHolder: accountHolder.trim(),
-                accountNumber: accountNumber.trim(),
-              }
+              bankName: bankName.trim(),
+              accountHolder: accountHolder.trim(),
+              accountNumber: accountNumber.trim(),
+            }
             : undefined,
         }),
       });
@@ -129,8 +129,8 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-white p-5 font-sans shadow-sm sm:p-6">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-3 py-6 sm:px-4 sm:py-8">
+      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-white p-4 font-sans shadow-sm sm:p-6">
 
         {/* Title with pulse dot */}
         <p className="text-2xl font-semibold text-blue-600 tracking-tight flex items-center pl-8 relative">
