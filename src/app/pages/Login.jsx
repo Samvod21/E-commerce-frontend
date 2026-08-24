@@ -100,15 +100,12 @@ const Login = () => {
           />
         </div>
 
-        {/* Remember me / Forgot password */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Remember me */}
+        <div className="mb-6 flex items-center">
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
             <input type="checkbox" className="accent-blue-500" />
             Remember me
           </label>
-          <span className="text-sm text-blue-500 font-medium cursor-pointer hover:underline">
-            Forgot password?
-          </span>
         </div>
 
         {/* Sign In button */}
