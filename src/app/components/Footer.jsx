@@ -25,7 +25,7 @@ export const Footer = () => {
     return (
         <footer className="mt-16 border-t border-slate-200 bg-slate-950 text-slate-200">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                <div className="mb-10 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 shadow-xl shadow-blue-900/20 sm:p-8">
+                <div className="mb-10 rounded-3xl bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 shadow-xl shadow-blue-900/20 sm:p-8">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
                             <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">Stay in the loop</p>

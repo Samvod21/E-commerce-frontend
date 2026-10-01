@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter } from 'react-router-dom';
 import { Home } from './app/pages/Home';
 import { ProductDetails } from './app/pages/ProductDetails';
 import { Cart } from './app/pages/Cart';
