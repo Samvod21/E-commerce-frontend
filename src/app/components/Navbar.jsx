@@ -21,6 +21,17 @@ export const Navbar = () => {
     }
   })();
   const isSeller = isAuthenticated && userRole === 'seller';
+  const greetingName = (() => {
+    try {
+      const raw = localStorage.getItem('user');
+      const user = raw ? JSON.parse(raw) : null;
+      const firstName = user?.firstName || user?.name?.split?.(' ')?.[0];
+      const lastName = user?.lastName || user?.name?.split?.(' ')?.[1];
+      return [firstName, lastName].filter(Boolean).join(' ');
+    } catch {
+      return '';
+    }
+  })();
 
   const handleLogout = () => {
     logout();
@@ -52,25 +63,12 @@ export const Navbar = () => {
           </button>
 
           <div className="hidden items-center space-x-2 md:flex">
-            {(() => {
-              let user = null;
-              try {
-                const raw = localStorage.getItem('user');
-                user = raw ? JSON.parse(raw) : null;
-              } catch {
-                user = null;
-              }
-              const firstName = user?.firstName || user?.name?.split?.(' ')?.[0];
-              const lastName = user?.lastName || user?.name?.split?.(' ')?.[1];
-              const greetingName = [firstName, lastName].filter(Boolean).join(' ');
-
-              return greetingName ? (
-                <div className="mr-3 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 shadow-sm">
-                  <span className="mr-2 h-2.5 w-2.5 rounded-full bg-blue-500" />
-                  Hi, {greetingName}
-                </div>
-              ) : null;
-            })()}
+            {greetingName && (
+              <div className="mr-3 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 shadow-sm">
+                <span className="mr-2 h-2.5 w-2.5 rounded-full bg-blue-500" />
+                Hi, {greetingName}
+              </div>
+            )}
 
             {isSeller && (
               <Link
@@ -126,6 +124,12 @@ export const Navbar = () => {
         {isOpen && (
           <div className="border-t border-gray-100 py-3 md:hidden">
             <div className="flex flex-col gap-1">
+              {greetingName && (
+                <div className="mb-1 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                  <span className="wrap-break-word">Hi, {greetingName}</span>
+                </div>
+              )}
               {isSeller && (
                 <Link to="/dashboard" onClick={closeMenu} className={navLinkClass}>
                   <span>Dashboard</span>
