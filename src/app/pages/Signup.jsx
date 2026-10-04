@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 const API_BASE = import.meta.env.VITE_API_URL
@@ -8,6 +9,8 @@ const API_BASE = import.meta.env.VITE_API_URL
 
 const FloatingLabel = ({ type, label, className = '', name, autoComplete = 'off', value, onChange }) => {
   const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
   const id = label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
   const isFloated = focused || value.length > 0;
@@ -24,14 +27,25 @@ const FloatingLabel = ({ type, label, className = '', name, autoComplete = 'off'
         id={id}
         name={name || id}
         required
-        type={type}
+        type={isPassword && showPassword ? 'text' : type}
         autoComplete={autoComplete}
         value={value}
         onChange={onChange}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className="absolute bottom-0 left-0 w-full px-3 pb-2 pt-0 h-8 text-sm bg-transparent outline-none rounded-xl"
+        className={`absolute bottom-0 left-0 w-full pb-2 pt-0 h-8 text-sm bg-transparent outline-none rounded-xl ${isPassword ? 'pl-3 pr-12' : 'px-3'}`}
       />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword((visible) => !visible)}
+          className="absolute bottom-1 right-2 inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label={showPassword ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          aria-pressed={showPassword}
+        >
+          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </button>
+      )}
     </div>
   );
 };
