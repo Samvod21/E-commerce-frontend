@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
-export const ProductCard = ({ product }) => {
+export const ProductCard = ({ product, loading = 'lazy', fetchPriority = 'auto' }) => {
   const { addToCart } = useCart();
 
   // Products can now have multiple sizes, each with its own price. A single
@@ -26,6 +26,9 @@ export const ProductCard = ({ product }) => {
             src={product.image}
             alt={product.name}
             className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-48"
+            loading={loading}
+            decoding="async"
+            fetchPriority={fetchPriority}
           />
         </div>
 
@@ -41,10 +44,10 @@ export const ProductCard = ({ product }) => {
               {hasMultipleSizes ? `From $${product.price.toFixed(2)}` : `$${product.price.toFixed(2)}`}
             </span>
             <span className={`rounded px-2 py-1 text-xs sm:text-sm ${product.stock > 10
-                ? 'bg-green-100 text-green-800'
-                : product.stock > 0
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
+              ? 'bg-green-100 text-green-800'
+              : product.stock > 0
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-red-100 text-red-800'
               }`}>
               {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
             </span>

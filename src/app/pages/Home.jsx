@@ -5,9 +5,11 @@ import {
   getSearchHistory,
   addToSearchHistory,
   saveFilterSelection,
-  getFilterSelection
+  getFilterSelection,
+  getOrFetchProducts
 } from '../utils/cache';
 
+const PRODUCTS_PER_PAGE = 12;
 
 const API_BASE = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api/products', '')
@@ -36,6 +38,7 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [searchHistory, setSearchHistory] = useState(() => getSearchHistory());
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -58,33 +61,52 @@ export const Home = () => {
     return filtered;
   }, [allProducts, searchQuery, selectedCategory]);
 
-  // Load products directly from backend (no product caching/localstorage)
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
+  const visibleProducts = filteredProducts.slice(
+    (currentPage - 1) * PRODUCTS_PER_PAGE,
+    currentPage * PRODUCTS_PER_PAGE
+  );
+
   useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
+  // Keep API data in memory briefly to avoid refetching during navigation.
+  useEffect(() => {
+    let cancelled = false;
+
     const loadProducts = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/api/products`);
-        const data = await res.json();
-        const backendProducts = Array.isArray(data) ? data : (data?.products ?? []);
-        const normalised = backendProducts
-          .map(withImageUrl)
-          .map((p) => ({
-            ...p,
-            // Use Mongo _id for routing when backend doesn't provide id.
-            id: String(p.id ?? p._id ?? p.productId ?? ''),
-          }))
-          .filter((p) => p.id);
+        const products = await getOrFetchProducts(async () => {
+          const res = await fetch(`${API_BASE}/api/products`);
+          if (!res.ok) throw new Error(`Product request failed (${res.status})`);
+          const data = await res.json();
+          const backendProducts = Array.isArray(data) ? data : (data?.products ?? []);
+          return backendProducts
+            .map(withImageUrl)
+            .map((p) => ({
+              ...p,
+              // Use Mongo _id for routing when backend doesn't provide id.
+              id: String(p.id ?? p._id ?? p.productId ?? ''),
+            }))
+            .filter((p) => p.id);
+        });
 
-        setAllProducts(normalised);
+        if (!cancelled) setAllProducts(products);
       } catch (e) {
         console.warn('Backend product fetch failed:', e);
-        setAllProducts([]);
+        if (!cancelled) setAllProducts([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadProducts();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
 
@@ -204,11 +226,42 @@ export const Home = () => {
 
       {/* Products Grid */}
       {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <p className="mb-3 text-sm text-gray-600" aria-live="polite">
+            Showing {(currentPage - 1) * PRODUCTS_PER_PAGE + 1}–{Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length)} of {filteredProducts.length} products
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+            {visibleProducts.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                loading={index < 4 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+              />
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <nav className="mt-6 flex items-center justify-between gap-3" aria-label="Product pages">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600" aria-current="page">Page {currentPage} of {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+              </button>
+            </nav>
+          )}
+        </>
       ) : (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No products found matching your criteria.</p>

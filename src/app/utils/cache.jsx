@@ -1,5 +1,10 @@
-// Cache utilities are intentionally removed.
-// Products must come from the backend MongoDB only.
+// Product data stays backend-owned; this short-lived memory cache only avoids
+// duplicate catalog requests while navigating within the app.
+const PRODUCT_CACHE_TTL_MS = 30_000;
+let productsCache = null;
+let productsCachedAt = 0;
+let productsCacheRevision = 0;
+let productsRequest = null;
 
 // Orders helpers (kept as safe defaults; orders are managed by backend)
 export const getOrders = () => [];
@@ -14,8 +19,43 @@ export const addProductToCache = (product) => product;
 export const updatePersistedProduct = (updatedProduct) => updatedProduct;
 export const deletePersistedProduct = () => { };
 export const refreshProductsCache = () => [];
-export const getProductsFromCache = () => null;
-export const setProductsToCache = () => { };
+export const getProductsFromCache = () => {
+  if (productsCache && Date.now() - productsCachedAt < PRODUCT_CACHE_TTL_MS) {
+    return productsCache;
+  }
+
+  return null;
+};
+export const setProductsToCache = (products) => {
+  productsCache = products;
+  productsCachedAt = Date.now();
+  return products;
+};
+export const invalidateProductsCache = () => {
+  productsCacheRevision += 1;
+  productsCache = null;
+  productsCachedAt = 0;
+  productsRequest = null;
+};
+export const getOrFetchProducts = (fetchProducts) => {
+  const cachedProducts = getProductsFromCache();
+  if (cachedProducts) return Promise.resolve(cachedProducts);
+  if (productsRequest) return productsRequest.promise;
+
+  const revision = productsCacheRevision;
+  const promise = Promise.resolve()
+    .then(fetchProducts)
+    .then((products) => {
+      if (revision === productsCacheRevision) setProductsToCache(products);
+      return products;
+    })
+    .finally(() => {
+      if (productsRequest?.promise === promise) productsRequest = null;
+    });
+
+  productsRequest = { promise };
+  return promise;
+};
 export const getAllProducts = () => [];
 
 

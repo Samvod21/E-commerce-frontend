@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { PlusSquare, Upload, CheckCircle, Trash2 } from 'lucide-react';
 import {
     getPersistedProducts,
+    invalidateProductsCache,
 } from '../utils/cache';
 
 
@@ -206,6 +207,7 @@ export const Dashboard = () => {
             });
 
             if (response.ok) {
+                invalidateProductsCache();
                 savedProduct = await response.json();
                 if (savedProduct && !savedProduct.image) {
                     savedProduct.image = product.image;
@@ -256,6 +258,7 @@ export const Dashboard = () => {
                     return;
                 }
 
+                invalidateProductsCache();
                 setStatus('Product updated successfully.');
                 setEditingId(null);
                 await fetchProductsFromBackend();
@@ -317,6 +320,7 @@ export const Dashboard = () => {
                 return;
             }
 
+            invalidateProductsCache();
             setStatus('Product deleted.');
             await fetchProductsFromBackend();
             // If we were editing the deleted product, reset form

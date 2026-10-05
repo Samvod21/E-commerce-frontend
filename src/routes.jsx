@@ -1,26 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { Home } from './app/pages/Home';
-import { ProductDetails } from './app/pages/ProductDetails';
-import { Cart } from './app/pages/Cart';
-import { Checkout } from './app/pages/Checkout';
-import { OrderHistory } from './app/pages/OrderHistory';
-import { Dashboard } from './app/pages/Dashboard';
-import Login from './app/pages/Login';
-import Signup from './app/pages/Signup';
-import { Navbar } from './app/components/Navbar';
-import { Footer } from './app/components/Footer';
+import { Home, ProductDetails, Cart, Checkout, OrderHistory, Dashboard, Login, Signup } from './app/lazyPages';
+import { Layout } from './app/components/Layout';
 import { RequireSeller } from './app/components/RequireSeller';
-
-
-const Layout = ({ children }) => {
-  return (
-    <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-x-hidden">
-      <Navbar />
-      <main className="flex-1 w-full">{children}</main>
-      <Footer />
-    </div>
-  );
-};
 
 export const router = createBrowserRouter([
   {
