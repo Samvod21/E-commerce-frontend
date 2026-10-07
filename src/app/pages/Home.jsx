@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
 import {
   getSearchHistory,
@@ -136,17 +136,6 @@ export const Home = () => {
     setSearchHistory(getSearchHistory());
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading products...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       <h1 className="mb-4 text-2xl font-bold text-gray-900 sm:mb-8 sm:text-4xl">Product Catalog</h1>
@@ -225,7 +214,23 @@ export const Home = () => {
       </div>
 
       {/* Products Grid */}
-      {filteredProducts.length > 0 ? (
+      {loading ? (
+        <div role="status" aria-label="Loading products">
+          <span className="sr-only">Loading products...</span>
+          <div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="animate-pulse overflow-hidden rounded-lg bg-white shadow-md">
+                <div className="h-44 bg-gray-200 sm:h-48" />
+                <div className="space-y-3 p-4">
+                  <div className="h-5 w-3/4 rounded bg-gray-200" />
+                  <div className="h-4 w-1/3 rounded bg-gray-100" />
+                  <div className="h-9 rounded-lg bg-gray-100" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : filteredProducts.length > 0 ? (
         <>
           <p className="mb-3 text-sm text-gray-600" aria-live="polite">
             Showing {(currentPage - 1) * PRODUCTS_PER_PAGE + 1}–{Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length)} of {filteredProducts.length} products
